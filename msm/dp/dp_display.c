@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -973,6 +973,14 @@ static int dp_display_send_hpd_notification(struct dp_display_private *dp)
 		dp_display_state_log("[TUI is active, skipping wait]");
 		goto skip_wait;
 	}
+
+	if (!dp->dp_display.is_bootsplash_en) {
+		dp->dp_display.is_bootsplash_en = true;
+		drm_bootsplash_client_register(dp->dp_display.drm_dev);
+	}
+
+	reinit_completion(&dp->notification_comp);
+	dp_display_send_hpd_event(dp);
 
 	if (hpd && dp->mst.mst_active)
 		goto skip_wait;

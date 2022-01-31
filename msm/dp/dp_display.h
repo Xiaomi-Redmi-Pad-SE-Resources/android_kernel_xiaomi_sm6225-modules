@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2021-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -52,6 +52,7 @@ struct dp_display {
 	u32 max_mixer_count;
 	u32 max_dsc_count;
 	void *dp_ipc_log;
+	bool is_bootsplash_en;
 
 	int (*enable)(struct dp_display *dp_display, void *panel);
 	int (*post_enable)(struct dp_display *dp_display, void *panel);
@@ -140,4 +141,8 @@ static inline int dp_display_mmrm_callback(struct mmrm_client_notifier_data *not
 	return 0;
 }
 #endif /* CONFIG_DRM_MSM_DP */
+
+#ifdef CONFIG_DRM_CLIENT_BOOTSPLASH
+void drm_bootsplash_client_register(struct drm_device *dev);
+#endif /* CONFIG_DRM_CLIENT_BOOTSPLASH */
 #endif /* _DP_DISPLAY_H_ */
