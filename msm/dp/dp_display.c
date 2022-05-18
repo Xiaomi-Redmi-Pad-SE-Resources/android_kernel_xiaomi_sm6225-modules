@@ -919,6 +919,7 @@ static int dp_display_send_hpd_notification(struct dp_display_private *dp)
 {
 	int ret = 0;
 	bool hpd = !!dp_display_state_is(DP_STATE_CONNECTED);
+	static u8 bootsplash_count;
 
 	SDE_EVT32_EXTERNAL(SDE_EVTLOG_FUNC_ENTRY, dp->state, hpd);
 
@@ -974,8 +975,9 @@ static int dp_display_send_hpd_notification(struct dp_display_private *dp)
 		goto skip_wait;
 	}
 
-	if (!dp->dp_display.is_bootsplash_en) {
+	if (!dp->dp_display.is_bootsplash_en && !bootsplash_count) {
 		dp->dp_display.is_bootsplash_en = true;
+		bootsplash_count++;
 		drm_bootsplash_client_register(dp->dp_display.drm_dev);
 	}
 
@@ -2548,6 +2550,10 @@ static int dp_display_post_enable(struct dp_display *dp_display, void *panel)
 	SDE_EVT32_EXTERNAL(SDE_EVTLOG_FUNC_ENTRY, dp->state);
 	mutex_lock(&dp->session_lock);
 
+	if (dp->dp_display.is_bootsplash_en) {
+		dp->dp_display.is_bootsplash_en = false;
+		goto end;
+	}
 	/*
 	 * If DP_STATE_READY is not set, we should not do any HW
 	 * programming.
