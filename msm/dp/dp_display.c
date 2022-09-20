@@ -227,6 +227,12 @@ static inline bool dp_display_is_hdcp_enabled(struct dp_display_private *dp)
 	return dp->link->hdcp_status.hdcp_version && dp->hdcp.ops;
 }
 
+static bool is_drm_bootsplash_enabled(struct device *dev)
+{
+	return of_property_read_bool(dev->of_node,
+		"qcom,sde-drm-fb-splash-logo-enabled");
+}
+
 static irqreturn_t dp_display_irq(int irq, void *dev_id)
 {
 	struct dp_display_private *dp = dev_id;
@@ -975,7 +981,9 @@ static int dp_display_send_hpd_notification(struct dp_display_private *dp)
 		goto skip_wait;
 	}
 
-	if (!dp->dp_display.is_bootsplash_en && !bootsplash_count) {
+	if (!dp->dp_display.is_bootsplash_en
+		&& is_drm_bootsplash_enabled(dp->dp_display.drm_dev->dev)
+		&& !bootsplash_count) {
 		dp->dp_display.is_bootsplash_en = true;
 		bootsplash_count++;
 		drm_bootsplash_client_register(dp->dp_display.drm_dev);
