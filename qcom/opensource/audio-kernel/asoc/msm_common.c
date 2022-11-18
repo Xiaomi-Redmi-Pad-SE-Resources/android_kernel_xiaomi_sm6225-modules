@@ -903,10 +903,8 @@ int msm_channel_map_get(struct snd_kcontrol *kcontrol,
 		/* reset return value from the loop above */
 		ret = 0;
 		if (rx_ch_cnt == 0 && tx_ch_cnt == 0) {
-			pr_debug("%s: got incorrect channel map for backend_id:%d, ",
-				__func__, backend_id);
-			pr_debug("%s: RX Channel Count:%d, TX Channel Count:%d\n",
-				__func__, rx_ch_cnt, tx_ch_cnt);
+			pr_debug("%s: incorrect ch map for backend_id:%d, RX Channel Cnt:%d, TX Channel Cnt:%d\n",
+				__func__, backend_id, rx_ch_cnt, tx_ch_cnt);
 			return ret;
 		}
 
