@@ -24,6 +24,8 @@
 #ifndef _WLAN_OSIF_FEATURES_H_
 #define _WLAN_OSIF_FEATURES_H_
 
+#define __ANDROID_COMMON_KERNEL__
+
 #include <linux/version.h>
 
 /*
