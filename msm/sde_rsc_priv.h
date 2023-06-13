@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
  */
 
@@ -170,6 +170,8 @@ enum sde_rsc_bw_delta {
  * @phandle:		module power handle for clocks
  * @fs:			"MDSS GDSC" handle
  * @sw_fs_enabled:	track "MDSS GDSC" sw vote during probe
+ * @need_hwinit:	rsc hw init is required for the next update
+ * @hw_reinit:		rsc hw reinit support enable
  *
  * @rpmh_dev:		rpmh device node
  * @drv_io:		sde drv io data mapping
@@ -218,6 +220,8 @@ struct sde_rsc_priv {
 	struct sde_power_handle phandle;
 	struct regulator *fs;
 	bool sw_fs_enabled;
+	bool need_hwinit;
+	bool hw_reinit;
 
 	struct device *rpmh_dev;
 	struct dss_io_data drv_io;
