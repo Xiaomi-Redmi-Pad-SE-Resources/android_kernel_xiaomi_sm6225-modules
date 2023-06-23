@@ -45,9 +45,15 @@
 #define T1_TEMP -10
 #define T2_TEMP 150
 #define LOW_TEMP_THRESHOLD 5
+#define DISABLE_TEMP_READ 0xfe
+#define ENABLE_TEMP_READ 0x01
 #define HIGH_TEMP_THRESHOLD 45
 #define TEMP_INVALID	0xFFFF
 #define BESBEV_TEMP_RETRY 3
+#define BESBEV_PA_OTP_LOW_MSB_VAL  0x49
+#define BESBEV_PA_OTP_LOW_LSB_VAL  0x02
+#define BESBEV_PA_OTP_HIGH_MSB_VAL 0xc9
+#define BESBEV_PA_OTP_HIGH_LSB_VAL 0x01
 
 #define MAX_NAME_LEN	40
 #define BESBEV_RATES (SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000 |\
@@ -1154,7 +1160,7 @@ static int besbev_enable_swr_dac_port(struct snd_soc_dapm_widget *w,
 			++num_port;
 		}
 		if (besbev->visense_enable) {
-			besbev_set_port_params(component, SWR_VISENSE_PORT,
+			besbev_set_port_params(component, SPKR_L_VI,
 					&port_id[num_port], &num_ch[num_port],
 					&ch_mask[num_port], &ch_rate[num_port],
 					&port_type[num_port], CODEC_RX);
@@ -1182,7 +1188,7 @@ static int besbev_enable_swr_dac_port(struct snd_soc_dapm_widget *w,
 			++num_port;
 		}
 		if (besbev->visense_enable) {
-			besbev_set_port_params(component, SWR_VISENSE_PORT,
+			besbev_set_port_params(component, SPKR_L_VI,
 					&port_id[num_port], &num_ch[num_port],
 					&ch_mask[num_port], &ch_rate[num_port],
 					&port_type[num_port], CODEC_RX);
@@ -1634,8 +1640,9 @@ int besbev_amic_init(struct snd_soc_component *component)
 	struct besbev_priv *besbev = snd_soc_component_get_drvdata(component);
 	struct besbev_pdata *pdata = NULL;
 
-	if (!besbev) {
-		dev_err(component->dev, "%s: besbev is NULL\n", __func__);
+	if (!besbev || besbev->visense_support) {
+		dev_err(component->dev, "%s: besbev is NULL or VI sense is"
+			" supported,so avoid AMIC init \n", __func__);
 		return -EINVAL;
 	}
 
@@ -1787,6 +1794,7 @@ static int32_t besbev_temp_reg_read(struct snd_soc_component *component,
 				     struct besbev_temp_register *besbev_temp_reg)
 {
 	struct besbev_priv *besbev = snd_soc_component_get_drvdata(component);
+	u8 val = 0;
 
 	if (!besbev) {
 		dev_err(component->dev, "%s: besbev is NULL\n", __func__);
@@ -1798,24 +1806,34 @@ static int32_t besbev_temp_reg_read(struct snd_soc_component *component,
 	snd_soc_component_update_bits(component, BESBEV_PA_FSM_BYP,
 				0x01, 0x01);
 	snd_soc_component_update_bits(component, BESBEV_PA_FSM_BYP,
-				0x04, 0x04);
+				0x05, 0x05);
 	snd_soc_component_update_bits(component, BESBEV_PA_FSM_BYP,
-				0x02, 0x02);
+				0x07, 0x07);
 	snd_soc_component_update_bits(component, BESBEV_PA_FSM_BYP,
-				0x80, 0x80);
+				0x07, 0x87);
 	snd_soc_component_update_bits(component, BESBEV_PA_FSM_BYP,
-				0x20, 0x20);
+				0xf7, 0xa7);
 	snd_soc_component_update_bits(component, BESBEV_PA_FSM_BYP,
-				0x40, 0x40);
+				0xf7, 0xe7);
+	val = snd_soc_component_read(component, BESBEV_TADC_VALUE_CTL);
+	/**
+	 * Disable read continous temp value
+	 */
+	val &= DISABLE_TEMP_READ;
 	snd_soc_component_update_bits(component, BESBEV_TADC_VALUE_CTL,
-				0x01, 0x00);
+				0xff, val);
+
 	besbev_temp_reg->dmeas_msb = snd_soc_component_read(
 					component, BESBEV_TEMP_MSB);
 	besbev_temp_reg->dmeas_lsb = snd_soc_component_read(
 					component, BESBEV_TEMP_LSB);
-
+	 /**
+         * Enable read continous temp value
+         */
+	val |= ENABLE_TEMP_READ;
 	snd_soc_component_update_bits(component, BESBEV_TADC_VALUE_CTL,
-				0x01, 0x01);
+				0xfe, val);
+
 	besbev_temp_reg->d1_msb = snd_soc_component_read(
 					component, BESBEV_PA_OTP_LOW_M);
 	besbev_temp_reg->d1_lsb = snd_soc_component_read(
@@ -1868,10 +1886,23 @@ static int besbev_get_temperature(struct snd_soc_component *component,
 		    (reg.d2_msb < 185 || reg.d2_msb > 218) ||
 		    (!(reg.d2_lsb == 0 || reg.d2_lsb == 64 || reg.d2_lsb == 128 ||
 			reg.d2_lsb == 192))) {
-			printk_ratelimited("%s: Temperature registers[%d %d %d %d] are out of range\n",
-					   __func__, reg.d1_msb, reg.d1_lsb, reg.d2_msb,
-					   reg.d2_lsb);
+			printk_ratelimited("%s: Temperature registers[%d %d %d %d]"
+				"are out of range\n", __func__, reg.d1_msb,
+				reg.d1_lsb, reg.d2_msb, reg.d2_lsb);
+
+			if (retry == 1) {
+				/**
+				* Following settings need to be done as OTP invalid parts for
+				* last read of OTP registers. Most likely the case for older
+				* targets, To verify otp valid parts, read valid registers.
+				*/
+				reg.d1_msb = BESBEV_PA_OTP_LOW_MSB_VAL;
+				reg.d1_lsb = BESBEV_PA_OTP_LOW_LSB_VAL;
+				reg.d2_msb = BESBEV_PA_OTP_HIGH_MSB_VAL;
+				reg.d2_lsb = BESBEV_PA_OTP_HIGH_LSB_VAL;
+			}
 		}
+
 		dmeas = ((reg.dmeas_msb << 0x8) | reg.dmeas_lsb) >> 0x6;
 		d1 = ((reg.d1_msb << 0x8) | reg.d1_lsb) >> 0x6;
 		d2 = ((reg.d2_msb << 0x8) | reg.d2_lsb) >> 0x6;
@@ -2286,7 +2317,7 @@ static struct snd_soc_dai_driver besbev_dai[] = {
 
 static int besbev_bind(struct device *dev)
 {
-	int ret = 0, i = 0, comp_support = 0;
+	int ret = 0, i = 0, comp_support = 0, val = 0;
 	struct besbev_priv *besbev = NULL;
 	struct besbev_pdata *pdata = NULL;
 	struct wcd_ctrl_platform_data *plat_data = NULL;
@@ -2419,6 +2450,13 @@ static int besbev_bind(struct device *dev)
 				__func__);
 		goto err;
 	}
+
+	ret = of_property_read_u32(dev->of_node, "qcom,visense-support", &val);
+
+	if (ret)
+		besbev->visense_support = 1;
+	else
+		besbev->visense_support = val;
 
 	if (besbev->speaker_present == true) {
 		/* Set all interupts as edge triggered */
