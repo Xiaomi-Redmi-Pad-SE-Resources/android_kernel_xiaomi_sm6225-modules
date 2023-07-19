@@ -17,10 +17,9 @@
 	#if defined(__arch_um__)
 		#define TRACE_INCLUDE_PATH ../../../../datarmnet/core
 	#else
-		#define TRACE_INCLUDE_PATH ../../../../vendor/qcom/opensource/datarmnet/core
+		#define TRACE_INCLUDE_PATH ../../../../sm6225-modules/qcom/opensource/datarmnet/core
 	#endif /* defined(__arch_um__) */
 #endif /* endif LINUX_VERSION_CODE < KERNEL_VERSION(5,5,0) */
-
 #define TRACE_INCLUDE_FILE rmnet_trace
 
 #if !defined(_TRACE_RMNET_H) || defined(TRACE_HEADER_MULTI_READ)
