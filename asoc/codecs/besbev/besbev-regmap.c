@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/regmap.h>
@@ -121,8 +121,10 @@ static const struct reg_default besbev_defaults[] = {
 	{ BESBEV_PA_OTP_LOW_L,			0xC0 },
 	{ BESBEV_PA_OTP_HIGH_M,			0xFF },
 	{ BESBEV_PA_OTP_HIGH_L,			0xC0 },
-	{ BESBEV_TADC_VALUE_CTL,		0x01 },
+	{ BESBEV_TADC_VALUE_CTL,		0x03 },
 	{ BESBEV_TEMP_DETECT_CTL,		0x01 },
+	{ BESBEV_TEMP_MSB,              	0x00 },
+	{ BESBEV_TEMP_LSB,              	0x00 },
 	{ BESBEV_TEMP_CONFIG0,			0x00 },
 	{ BESBEV_TEMP_CONFIG1,			0x00 },
 	{ BESBEV_VBAT_ADC_FLT_CTL,		0x00 },

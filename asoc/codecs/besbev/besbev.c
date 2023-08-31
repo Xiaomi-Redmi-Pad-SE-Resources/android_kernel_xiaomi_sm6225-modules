@@ -45,15 +45,11 @@
 #define T1_TEMP -10
 #define T2_TEMP 150
 #define LOW_TEMP_THRESHOLD 5
-#define DISABLE_TEMP_READ 0xfe
-#define ENABLE_TEMP_READ 0x01
+#define UNLOCK_CONTIN_TEMP_READ 0x01
+#define LOCK_CONTIN_TEMP_READ 0x00
 #define HIGH_TEMP_THRESHOLD 45
 #define TEMP_INVALID	0xFFFF
 #define BESBEV_TEMP_RETRY 3
-#define BESBEV_PA_OTP_LOW_MSB_VAL  0x49
-#define BESBEV_PA_OTP_LOW_LSB_VAL  0x02
-#define BESBEV_PA_OTP_HIGH_MSB_VAL 0xc9
-#define BESBEV_PA_OTP_HIGH_LSB_VAL 0x01
 
 #define MAX_NAME_LEN	40
 #define BESBEV_RATES (SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000 |\
@@ -111,6 +107,41 @@ enum {
 	BESBEV_IRQ_INT_UVLO,
 	BESBEV_IRQ_INT_PA_ON_ERR,
 	BESBEV_NUM_IRQS,
+};
+
+struct bb_reg_mask_val {
+	u16 reg;
+	u8 mask;
+	u8 val;
+};
+
+static const struct bb_reg_mask_val bb_init[] = {
+	{BESBEV_IVSENSE_ADC_5,                  0x30,   0x05},
+	{BESBEV_IVSENSE_ADC_4,                  0x30,   0x05},
+	{BESBEV_IVSENSE_ISENSE2,                0x0F,   0x0A},
+	{BESBEV_IVSENSE_ADC_6,                  0x02,   0x02},
+	{BESBEV_IVSENSE_ADC_2,                  0x40,   0x00},
+	{BESBEV_IVSENSE_ADC_7,                  0x04,   0x04},
+	{BESBEV_IVSENSE_ADC_7,                  0x02,   0x02},
+	{BESBEV_SPK_TOP_SPKR_DRV_LF_MISC_CTL,   0x30,   0x20},
+	{BESBEV_SPK_TOP_DAC_CTRL_REG,           0x01,   0x01},
+	{BESBEV_DRE_CTL_1,                      0x01,   0x01},
+	{BESBEV_VAGC_TIME,                      0x0C,   0x0C},
+	{BESBEV_VAGC_TIME,                      0x03,   0x03},
+	{BESBEV_VAGC_ATTN_LVL_1_2,              0x30,   0x11},
+	{BESBEV_VAGC_ATTN_LVL_3,                0x03,   0x02},
+	// Enable BCL, Enable "VBAT_AGC_EN"
+	{BESBEV_VAGC_CTL,                       0x71,   0x01},
+	{BESBEV_TAGC_CTL,                       0x0E,   0x0A},
+	{BESBEV_TAGC_TIME,                      0x30,   0x10},
+	{BESBEV_TAGC_E2E_GAIN,                  0x07,   0x04},
+	{BESBEV_TAGC_CTL,                       0x01,   0x01},
+	{BESBEV_TEMP_CONFIG0,                   0x07,   0x02},
+	{BESBEV_TEMP_CONFIG1,                   0x07,   0x02},
+	{BESBEV_PA_OTP_LOW_M,                   0xFF,   0x49},
+	{BESBEV_PA_OTP_LOW_L,                   0xC0,   0x80},
+	{BESBEV_PA_OTP_HIGH_M,                  0xFF,   0xC9},
+	{BESBEV_PA_OTP_HIGH_L,                  0xC0,   0x40},
 };
 
 static const struct regmap_irq BESBEV_IRQs[BESBEV_NUM_IRQS] = {
@@ -186,61 +217,19 @@ static int besbev_swr_ctrl(struct snd_soc_dapm_widget *w,
 static int besbev_init_reg(struct snd_soc_component *component,
 				bool speaker_present)
 {
+	int i;
+
 	if (speaker_present == true) {
-		snd_soc_component_update_bits(component, BESBEV_VAGC_TIME,
-						0x0C, 0x0C);
-		snd_soc_component_update_bits(component, BESBEV_VAGC_TIME,
-						0x03, 0x03);
-		snd_soc_component_update_bits(component,
-						BESBEV_VAGC_ATTN_LVL_1_2,
-						0x77, 0x11);
-		snd_soc_component_update_bits(component,
-						BESBEV_VAGC_ATTN_LVL_3,
-						0x07, 0x02);
-		/* Enable BCL, Enable "VBAT_AGC_EN"*/
-		snd_soc_component_update_bits(component, BESBEV_VAGC_CTL,
-						0x71, 0x41);
-
-		snd_soc_component_update_bits(component, BESBEV_TAGC_CTL,
-						0x0E, 0x0A);
-		snd_soc_component_update_bits(component, BESBEV_TAGC_TIME,
-						0x30, 0x10);
-		snd_soc_component_update_bits(component, BESBEV_TAGC_E2E_GAIN,
-						0x1F, 0x04);
-		snd_soc_component_update_bits(component, BESBEV_TAGC_CTL,
-						0x01, 0x01);
-		snd_soc_component_update_bits(component, BESBEV_TEMP_CONFIG0,
-						0x07, 0x02);
-		snd_soc_component_update_bits(component, BESBEV_TEMP_CONFIG1,
-						0x07, 0x02);
-
-		snd_soc_component_update_bits(component, BESBEV_IVSENSE_ADC_4,
-						0x70, 0x00);
-		snd_soc_component_update_bits(component, BESBEV_IVSENSE_ADC_5,
-						0x0C, 0x00);
-		snd_soc_component_update_bits(component, BESBEV_IVSENSE_ADC_5,
-						0x70, 0x00);
-		snd_soc_component_update_bits(component, BESBEV_IVSENSE_ADC_5,
-						0xF, 0x5);
-		snd_soc_component_update_bits(component, BESBEV_IVSENSE_ISENSE2,
-						0x0F, 0x0A);
-		snd_soc_component_update_bits(component, BESBEV_IVSENSE_ADC_6,
-						0x02, 0x02);
-		snd_soc_component_update_bits(component, BESBEV_IVSENSE_ADC_2,
-						0x40, 0x00);
-		snd_soc_component_update_bits(component, BESBEV_IVSENSE_ADC_7,
-						0x04, 0x04);
-		snd_soc_component_update_bits(component, BESBEV_IVSENSE_ADC_7,
-						0x02, 0x02);
-
-		snd_soc_component_update_bits(component, BESBEV_DRE_CTL_1,
-						0x01, 0x01);
+		for (i = 0; i < ARRAY_SIZE(bb_init); i++) {
+			snd_soc_component_update_bits(component, bb_init[i].reg,
+						bb_init[i].mask, bb_init[i].val);
+		}
 	}
 	/* Disable mic bias pull down */
 	snd_soc_component_update_bits(component, BESBEV_ANA_MICBIAS_MICB_1_2_EN,
-					0x01, 0x00);
+								0x01, 0x00);
 	snd_soc_component_update_bits(component, BESBEV_CKWD_CKWD_CTL_1,
-					0x1F, 0x1B);
+								0x1F, 0x1B);
 	return 0;
 }
 
@@ -1794,45 +1783,41 @@ static int32_t besbev_temp_reg_read(struct snd_soc_component *component,
 				     struct besbev_temp_register *besbev_temp_reg)
 {
 	struct besbev_priv *besbev = snd_soc_component_get_drvdata(component);
-	u8 val = 0;
 
 	if (!besbev) {
 		dev_err(component->dev, "%s: besbev is NULL\n", __func__);
 		return -EINVAL;
 	}
-
 	mutex_lock(&besbev->res_lock);
+	besbev_global_mbias_enable(component);
 
 	snd_soc_component_update_bits(component, BESBEV_PA_FSM_BYP,
 				0x01, 0x01);
 	snd_soc_component_update_bits(component, BESBEV_PA_FSM_BYP,
-				0x05, 0x05);
+				0x04, 0x04);
 	snd_soc_component_update_bits(component, BESBEV_PA_FSM_BYP,
-				0x07, 0x07);
+				0x02, 0x02);
 	snd_soc_component_update_bits(component, BESBEV_PA_FSM_BYP,
-				0x07, 0x87);
+				0x80, 0x80);
 	snd_soc_component_update_bits(component, BESBEV_PA_FSM_BYP,
-				0xf7, 0xa7);
+				0x20, 0x20);
 	snd_soc_component_update_bits(component, BESBEV_PA_FSM_BYP,
-				0xf7, 0xe7);
-	val = snd_soc_component_read(component, BESBEV_TADC_VALUE_CTL);
+				0x40, 0x40);
 	/**
 	 * Disable read continous temp value
 	 */
-	val &= DISABLE_TEMP_READ;
 	snd_soc_component_update_bits(component, BESBEV_TADC_VALUE_CTL,
-				0xff, val);
+				0x01, LOCK_CONTIN_TEMP_READ);
 
 	besbev_temp_reg->dmeas_msb = snd_soc_component_read(
 					component, BESBEV_TEMP_MSB);
 	besbev_temp_reg->dmeas_lsb = snd_soc_component_read(
 					component, BESBEV_TEMP_LSB);
 	 /**
-         * Enable read continous temp value
-         */
-	val |= ENABLE_TEMP_READ;
+      * Enable read continous temp value
+      */
 	snd_soc_component_update_bits(component, BESBEV_TADC_VALUE_CTL,
-				0xfe, val);
+				0x01, UNLOCK_CONTIN_TEMP_READ);
 
 	besbev_temp_reg->d1_msb = snd_soc_component_read(
 					component, BESBEV_PA_OTP_LOW_M);
@@ -1845,6 +1830,7 @@ static int32_t besbev_temp_reg_read(struct snd_soc_component *component,
 
 	snd_soc_component_update_bits(component, BESBEV_PA_FSM_BYP,
 				0xE7, 0x00);
+	besbev_global_mbias_disable(component);
 	mutex_unlock(&besbev->res_lock);
 
 	return 0;
@@ -1889,18 +1875,6 @@ static int besbev_get_temperature(struct snd_soc_component *component,
 			printk_ratelimited("%s: Temperature registers[%d %d %d %d]"
 				"are out of range\n", __func__, reg.d1_msb,
 				reg.d1_lsb, reg.d2_msb, reg.d2_lsb);
-
-			if (retry == 1) {
-				/**
-				* Following settings need to be done as OTP invalid parts for
-				* last read of OTP registers. Most likely the case for older
-				* targets, To verify otp valid parts, read valid registers.
-				*/
-				reg.d1_msb = BESBEV_PA_OTP_LOW_MSB_VAL;
-				reg.d1_lsb = BESBEV_PA_OTP_LOW_LSB_VAL;
-				reg.d2_msb = BESBEV_PA_OTP_HIGH_MSB_VAL;
-				reg.d2_lsb = BESBEV_PA_OTP_HIGH_LSB_VAL;
-			}
 		}
 
 		dmeas = ((reg.dmeas_msb << 0x8) | reg.dmeas_lsb) >> 0x6;
