@@ -12,9 +12,6 @@
 #include <linux/clk.h>
 #include <linux/clkdev.h>
 #include <linux/regmap.h>
-#include "clk-regmap.h"
-#include "clk-regmap-divider.h"
-#include "clk-regmap-mux.h"
 #include "dsi_defs.h"
 #include "dsi_hw.h"
 
