@@ -10696,11 +10696,17 @@ static const struct snd_soc_component_driver soc_codec_dev_tavil = {
 static int tavil_suspend(struct device *dev)
 {
 	struct platform_device *pdev = to_platform_device(dev);
-	struct tavil_priv *tavil = platform_get_drvdata(pdev);
+	struct tavil_priv *tavil = NULL;
 	struct wcd9xxx *wcd9xxx = NULL;
 	struct wcd9xxx_pdata *pdata = NULL;
 	struct snd_soc_component *component = NULL;
 
+	if (!pdev) {
+		dev_err(dev, "%s: Platform device null\n", __func__);
+		return -EINVAL;
+	}
+
+	tavil = platform_get_drvdata(pdev);
 	if (!tavil) {
 		dev_err(dev, "%s: tavil private data is NULL\n", __func__);
 		return -EINVAL;
@@ -10708,7 +10714,16 @@ static int tavil_suspend(struct device *dev)
 
 	wcd9xxx   = tavil->wcd9xxx;
 	component = tavil->component;
+	if (!wcd9xxx || !component || !component->dev || !component->dev->parent) {
+		dev_err(dev, "%s: wcd9xxx or component, dev or parent is NULL\n", __func__);
+		return -EINVAL;
+	}
+
 	pdata     = dev_get_platdata(component->dev->parent);
+	if (!pdata) {
+		dev_err(dev, "%s: pdata is NULL\n", __func__);
+		return -EINVAL;
+	}
 
 	dev_dbg(dev, "%s: system suspend\n", __func__);
 	if (delayed_work_pending(&tavil->power_gate_work) &&
@@ -10728,11 +10743,17 @@ static int tavil_suspend(struct device *dev)
 static int tavil_resume(struct device *dev)
 {
 	struct platform_device *pdev = to_platform_device(dev);
-	struct tavil_priv *tavil = platform_get_drvdata(pdev);
+	struct tavil_priv *tavil = NULL;
 	struct wcd9xxx *wcd9xxx = NULL;
 	struct wcd9xxx_pdata *pdata = NULL;
 	struct snd_soc_component *component = NULL;
 
+	if (!pdev) {
+		dev_err(dev, "%s: Platform device null\n", __func__);
+		return -EINVAL;
+	}
+
+	tavil = platform_get_drvdata(pdev);
 	if (!tavil) {
 		dev_err(dev, "%s: tavil private data is NULL\n", __func__);
 		return -EINVAL;
@@ -10741,7 +10762,16 @@ static int tavil_resume(struct device *dev)
 
 	wcd9xxx   = tavil->wcd9xxx;
 	component = tavil->component;
+	if (!wcd9xxx || !component || !component->dev || !component->dev->parent) {
+		dev_err(dev, "%s: wcd9xxx or component, dev or parent could be NULL\n", __func__);
+		return -EINVAL;
+        }
+
 	pdata     = dev_get_platdata(component->dev->parent);
+	if (!pdata) {
+		dev_err(dev, "%s: pdata is NULL\n", __func__);
+		return -EINVAL;
+	}
 
 	if (test_bit(WCD_SUPPLIES_LPM_MODE, &tavil->status_mask)) {
 		msm_cdc_set_supplies_lpm_mode(wcd9xxx->dev,
