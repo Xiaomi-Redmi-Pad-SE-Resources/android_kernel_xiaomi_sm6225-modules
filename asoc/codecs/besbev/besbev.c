@@ -130,8 +130,8 @@ static const struct bb_reg_mask_val bb_init[] = {
 	{BESBEV_VAGC_TIME,                      0x03,   0x03},
 	{BESBEV_VAGC_ATTN_LVL_1_2,              0x30,   0x11},
 	{BESBEV_VAGC_ATTN_LVL_3,                0x03,   0x02},
-	// Enable BCL, Enable "VBAT_AGC_EN"
-	{BESBEV_VAGC_CTL,                       0x71,   0x01},
+	// Enable BCL or Enable "VBAT_AGC_EN (BOP)"
+	{BESBEV_VAGC_CTL,                       0x71,   0x41},
 	{BESBEV_TAGC_CTL,                       0x0E,   0x0A},
 	{BESBEV_TAGC_TIME,                      0x30,   0x10},
 	{BESBEV_TAGC_E2E_GAIN,                  0x07,   0x04},
@@ -1244,7 +1244,6 @@ static int besbev_spkr_event(struct snd_soc_dapm_widget *w,
 						0x01, 0x00);
 		snd_soc_component_update_bits(component, BESBEV_PDM_WD_CTL,
 						0x01, 0x01);
-		wcd_enable_irq(&besbev->irq_info, BESBEV_IRQ_INT_UVLO);
 		/* Force remove group */
 		swr_remove_from_group(besbev->swr_dev,
 				      besbev->swr_dev->dev_num);
