@@ -33,7 +33,7 @@
 #include <soc/snd_event.h>
 #include "msm_dailink.h"
 #include "msm_common.h"
-
+#include <soc/qcom/boot_stats.h>
 
 #define DRV_NAME "spf-asoc-snd"
 #define DRV_PINCTRL_NAME "audio-pcm-pinctrl"
@@ -1405,6 +1405,7 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 
 	dev_err(&pdev->dev, "%s: audio_reach\n", __func__);
 
+        place_marker("M - DRIVER Audio Init");
 	match = of_match_node(asoc_machine_of_match, pdev->dev.of_node);
 	if (!match) {
 		dev_err(&pdev->dev, "%s: No DT match found for sound card\n", __func__);
@@ -1489,6 +1490,7 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 
 	dev_info(&pdev->dev, "Sound card %s registered\n", card->name);
 	pr_err("Sound card %s registered\n", card->name);
+        place_marker("M - DRIVER Audio Ready");
 	spdev = pdev;
 
 #ifdef CONFIG_MSM_COUPLED_SSR
