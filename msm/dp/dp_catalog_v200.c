@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
+ * Copyright (c) 2023, Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
  */
 
@@ -87,7 +88,7 @@ static void dp_catalog_aux_setup_v200(struct dp_catalog_aux *aux,
 	wmb(); /* make sure programming happened */
 
 	io_data = catalog->io->dp_tcsr;
-	dp_write(0x4c, 0x1); /* bit 0 & 2 */
+	dp_write(0x0, 0x1); /* bit 0 & 2 */
 	wmb(); /* make sure programming happened */
 
 	io_data = catalog->io->dp_phy;
@@ -117,6 +118,7 @@ static void dp_catalog_panel_config_msa_v200(struct dp_catalog_panel *panel,
 	struct dp_io_data *io_data;
 	u32 strm_reg_off = 0;
 	u32 mvid_reg_off = 0, nvid_reg_off = 0;
+	u32 phy_version = 0;
 
 	if (!panel) {
 		DP_ERR("invalid input\n");
@@ -135,8 +137,15 @@ static void dp_catalog_panel_config_msa_v200(struct dp_catalog_panel *panel,
 		strm_reg_off = MMSS_DP_PIXEL1_M_V200 -
 					MMSS_DP_PIXEL_M_V200;
 
-	pixel_m = dp_read(MMSS_DP_PIXEL_M_V200 + strm_reg_off);
-	pixel_n = dp_read(MMSS_DP_PIXEL_N_V200 + strm_reg_off);
+	phy_version = dp_catalog_get_dp_phy_version(catalog->dpc);
+	if (phy_version != 0x30000000) {
+		pixel_m = dp_read(MMSS_DP_PIXEL_M_V200 + strm_reg_off);
+		pixel_n = dp_read(MMSS_DP_PIXEL_N_V200 + strm_reg_off);
+	} else {
+		pixel_m = dp_read((MMSS_DP_PIXEL_M_V200 - 4) + strm_reg_off);
+		pixel_n = dp_read((MMSS_DP_PIXEL_N_V200 - 4) + strm_reg_off);
+	}
+
 	DP_DEBUG("pixel_m=0x%x, pixel_n=0x%x\n", pixel_m, pixel_n);
 
 	mvid = (pixel_m & 0xFFFF) * 5;
@@ -240,6 +249,16 @@ static void dp_catalog_put_v200(struct dp_catalog *catalog)
 	devm_kfree(catalog_priv->dev, catalog_priv);
 }
 
+static int dp_catalog_ctrl_late_phy_init_v200(struct dp_catalog_ctrl *ctrl,
+					u8 lane_cnt, bool flipped)
+{
+	/*
+	 * TODO: PHY late init is required for DP CTS.
+	 * Move phy init from pll driver to here.
+	 */
+	return 0;
+}
+
 struct dp_catalog_sub *dp_catalog_get_v200(struct device *dev,
 		struct dp_catalog *catalog, struct dp_catalog_io *io)
 {
@@ -267,6 +286,7 @@ struct dp_catalog_sub *dp_catalog_get_v200(struct device *dev,
 
 	catalog->ctrl.lane_mapping       = dp_catalog_ctrl_lane_mapping_v200;
 	catalog->ctrl.usb_reset          = dp_catalog_ctrl_usb_reset_v200;
+	catalog->ctrl.late_phy_init      = dp_catalog_ctrl_late_phy_init_v200;
 
 	return &catalog_priv->sub;
 }

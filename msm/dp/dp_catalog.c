@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2022, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023, Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -914,6 +914,7 @@ static void dp_catalog_panel_config_misc(struct dp_catalog_panel *panel)
 	struct dp_catalog_private *catalog;
 	struct dp_io_data *io_data;
 	u32 reg_offset = 0;
+	u32 phy_version = 0;
 
 	if (!panel) {
 		DP_ERR("invalid input\n");
@@ -926,6 +927,11 @@ static void dp_catalog_panel_config_misc(struct dp_catalog_panel *panel)
 	}
 
 	catalog = dp_catalog_get_priv(panel);
+
+	phy_version = dp_catalog_get_dp_phy_version(&catalog->dp_catalog);
+	if (phy_version == 0x30000000)
+		panel->misc_val &= ~BIT(14);
+
 	io_data = catalog->io.dp_link;
 
 	if (panel->stream_id == DP_STREAM_1)
