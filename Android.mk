@@ -14,7 +14,7 @@ ifeq ($(call is-board-platform, bengal),true)
 AUDIO_SELECT  := CONFIG_SND_SOC_BENGAL=m
 endif
 
-ifeq ($(call is-board-platform, monaco),true)
+ifeq ($(call is-board-platform-in-list, monaco),true)
 AUDIO_SELECT  := CONFIG_SND_SOC_MONACO=m
 endif
 
@@ -36,6 +36,9 @@ ifneq ($(findstring opensource,$(LOCAL_PATH)),)
 	AUDIO_BLD_DIR := $(abspath .)/$(BOARD_OPENSOURCE_DIR)/audio-kernel
 endif # opensource
 
+ifeq ($(TARGET_KERNEL_SUPPORTS_BAZEL),true)
+include $(AUDIO_BLD_DIR)/EnableBazel.mk
+endif
 DLKM_DIR := $(TOP)/$(BOARD_COMMON_DIR)/dlkm
 
 

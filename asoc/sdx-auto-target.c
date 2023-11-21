@@ -142,14 +142,14 @@ static void sdx_mi2s_shutdown(struct snd_pcm_substream *substream)
 	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
 
 	if (atomic_dec_return(&mi2s_ref_count) == 0) {
-		if (pdata->prim_mi2s_mode == 1) {
-			struct clk_cfg intf_clk_cfg;
-			ret = msm_cdc_pinctrl_select_sleep_state
-						(pdata->prim_master_slave_p);
-			if (ret)
-				pr_err("%s: failed to set pri gpios to sleep: %d\n",
-			       __func__, ret);
+		struct clk_cfg intf_clk_cfg;
+		ret = msm_cdc_pinctrl_select_sleep_state
+					(pdata->prim_master_slave_p);
+		if (ret)
+			pr_err("%s: failed to set pri gpios to sleep: %d\n",
+			   __func__, ret);
 
+		if (pdata->prim_mi2s_mode == 1) {
 			intf_clk_cfg.clk_id = CLOCK_ID_MCLK_3 ;
 			intf_clk_cfg.clk_freq_in_hz = SDX_MCLK_CLK_12P288MHZ;
 			intf_clk_cfg.clk_attri = CLOCK_ATTRIBUTE_COUPLE_NO;
@@ -247,25 +247,12 @@ static int sdx_mi2s_startup(struct snd_pcm_substream *substream)
 					__func__, ret);
 			}
 		} else {
-			/*
-			 * Disable bit clk in slave mode for QC codec.
-			 * Enable only mclk.
-			 */
-			struct clk_cfg intf_clk_cfg;
 			ret = msm_cdc_pinctrl_select_alt_active_state
 					(pdata->prim_master_slave_p);
 			if (ret < 0) {
 				pr_err("%s pinctrl set failed\n", __func__);
 				goto done;
 			}
-			intf_clk_cfg.clk_id = CLOCK_ID_MCLK_3 ;
-			intf_clk_cfg.clk_freq_in_hz = SDX_MCLK_CLK_12P288MHZ;
-			intf_clk_cfg.clk_attri = CLOCK_ATTRIBUTE_COUPLE_NO;
-			intf_clk_cfg.clk_root = 0;
-			ret = audio_prm_set_lpass_clk_cfg(&intf_clk_cfg, 0);
-			if (ret < 0) {
-				pr_err("%s set lpass clk set failed\n", __func__);
-            }
 		}
 		audio_prm_set_lpass_core_clk_req( NULL, 1, 0);
 	}
@@ -289,14 +276,14 @@ static void sdx_tert_mi2s_shutdown(struct snd_pcm_substream *substream)
 	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
 
 	if (atomic_dec_return(&tert_mi2s_ref_count) == 0) {
-		if (pdata->tert_mi2s_mode == 1) {
-			struct clk_cfg intf_clk_cfg;
+		struct clk_cfg intf_clk_cfg;
 
-			ret = msm_cdc_pinctrl_select_sleep_state
-						(pdata->tert_master_slave_p);
-			if (ret)
-				pr_err("%s: failed to set tert gpios to sleep: %d\n",
-			       __func__, ret);
+		ret = msm_cdc_pinctrl_select_sleep_state
+					(pdata->tert_master_slave_p);
+		if (ret)
+			pr_err("%s: failed to set tert gpios to sleep: %d\n",
+			   __func__, ret);
+		if (pdata->tert_mi2s_mode == 1) {
 			intf_clk_cfg.clk_id = CLOCK_ID_MCLK_3 ;
 			intf_clk_cfg.clk_freq_in_hz = SDX_MCLK_CLK_12P288MHZ;
 			intf_clk_cfg.clk_attri = CLOCK_ATTRIBUTE_COUPLE_NO;
@@ -376,24 +363,11 @@ static int sdx_tert_mi2s_startup(struct snd_pcm_substream *substream)
 			}
 
 		} else {
-			/*
-			 * Disable bit clk in slave mode for QC codec.
-			 * Enable only mclk.
-			 */
-			struct clk_cfg intf_clk_cfg;
 			ret = msm_cdc_pinctrl_select_alt_active_state
 					(pdata->tert_master_slave_p);
 			if (ret < 0) {
 				pr_err("%s pinctrl set failed\n", __func__);
 				goto done;
-			}
-			intf_clk_cfg.clk_id = CLOCK_ID_MCLK_3 ;
-			intf_clk_cfg.clk_freq_in_hz = SDX_MCLK_CLK_12P288MHZ;
-			intf_clk_cfg.clk_attri = CLOCK_ATTRIBUTE_COUPLE_NO;
-			intf_clk_cfg.clk_root = 0;
-			ret = audio_prm_set_lpass_clk_cfg(&intf_clk_cfg, 0);
-			if (ret < 0) {
-				pr_err("%s set lpass clk set failed\n", __func__);
 			}
 		}
 		audio_prm_set_lpass_core_clk_req( NULL, 1, 0);
@@ -418,14 +392,14 @@ static void sdx_sec_mi2s_shutdown(struct snd_pcm_substream *substream)
 	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
 
 	if (atomic_dec_return(&sec_mi2s_ref_count) == 0) {
-		if (pdata->sec_mi2s_mode == 1) {
-			struct clk_cfg intf_clk_cfg;
+		struct clk_cfg intf_clk_cfg;
 
-			ret = msm_cdc_pinctrl_select_sleep_state
-						(pdata->sec_master_slave_p);
-			if (ret)
-				pr_err("%s: failed to set sec gpios to sleep: %d\n",
-			       __func__, ret);
+		ret = msm_cdc_pinctrl_select_sleep_state
+					(pdata->sec_master_slave_p);
+		if (ret)
+			pr_err("%s: failed to set sec gpios to sleep: %d\n",
+			   __func__, ret);
+		if (pdata->sec_mi2s_mode == 1) {
 			intf_clk_cfg.clk_id = CLOCK_ID_MCLK_3 ;
 			intf_clk_cfg.clk_freq_in_hz = SDX_MCLK_CLK_12P288MHZ;
 			intf_clk_cfg.clk_attri = CLOCK_ATTRIBUTE_COUPLE_NO;
@@ -505,24 +479,11 @@ static int sdx_sec_mi2s_startup(struct snd_pcm_substream *substream)
 			}
 
 		} else {
-			/*
-			 * Disable bit clk in slave mode for QC codec.
-			 * Enable only mclk.
-			 */
-			struct clk_cfg intf_clk_cfg;
 			ret = msm_cdc_pinctrl_select_alt_active_state
 					(pdata->sec_master_slave_p);
 			if (ret < 0) {
 				pr_err("%s pinctrl set failed\n", __func__);
 				goto done;
-			}
-			intf_clk_cfg.clk_id = CLOCK_ID_MCLK_3 ;
-			intf_clk_cfg.clk_freq_in_hz = SDX_MCLK_CLK_12P288MHZ;
-			intf_clk_cfg.clk_attri = CLOCK_ATTRIBUTE_COUPLE_NO;
-			intf_clk_cfg.clk_root = 0;
-			ret = audio_prm_set_lpass_clk_cfg(&intf_clk_cfg, 0);
-			if (ret < 0) {
-				pr_err("%s set lpass clk set failed\n", __func__);
 			}
 		}
 		audio_prm_set_lpass_core_clk_req( NULL, 1, 0);
@@ -547,14 +508,14 @@ static void sdx_tdm_shutdown(struct snd_pcm_substream *substream)
 	struct msm_asoc_mach_data *pdata = snd_soc_card_get_drvdata(card);
 
 	if (atomic_dec_return(&mi2s_ref_count) == 0) {
-		if (pdata->prim_mi2s_mode == 1) {
-			struct clk_cfg intf_clk_cfg;
-			ret = msm_cdc_pinctrl_select_sleep_state
-						(pdata->prim_master_slave_p);
-			if (ret)
-				pr_err("%s: failed to set pri gpios to sleep: %d\n",
-			       __func__, ret);
+		struct clk_cfg intf_clk_cfg;
+		ret = msm_cdc_pinctrl_select_sleep_state
+					(pdata->prim_master_slave_p);
+		if (ret)
+			pr_err("%s: failed to set pri gpios to sleep: %d\n",
+			   __func__, ret);
 
+		if (pdata->prim_mi2s_mode == 1) {
 			intf_clk_cfg.clk_id = CLOCK_ID_MCLK_3 ;
 			intf_clk_cfg.clk_freq_in_hz = SDX_MCLK_CLK_12P288MHZ;
 			intf_clk_cfg.clk_attri = CLOCK_ATTRIBUTE_COUPLE_NO;
@@ -565,6 +526,174 @@ static void sdx_tdm_shutdown(struct snd_pcm_substream *substream)
 			}
 		}
 	}
+}
+
+static int sdx_mi2s_mode_get(struct snd_kcontrol *kcontrol,
+			     struct snd_ctl_elem_value *ucontrol)
+{
+	pr_debug("%s sdx_mi2s_mode %d\n", __func__, sdx_mi2s_mode);
+	ucontrol->value.integer.value[0] = sdx_mi2s_mode;
+	return 0;
+}
+
+static int sdx_mi2s_mode_put(struct snd_kcontrol *kcontrol,
+			     struct snd_ctl_elem_value *ucontrol)
+{
+	switch (ucontrol->value.integer.value[0]) {
+	case 1:
+		sdx_mi2s_mode = I2S_PCM_MASTER_MODE;
+		break;
+	case 0:
+		sdx_mi2s_mode = I2S_PCM_SLAVE_MODE;
+		break;
+	default:
+		sdx_mi2s_mode = I2S_PCM_MASTER_MODE;
+		break;
+	}
+	pr_debug("%s: sdx_mi2s_mode = %d ucontrol->value = %d\n",
+		 __func__, sdx_mi2s_mode,
+		 (int)ucontrol->value.integer.value[0]);
+	return 0;
+}
+
+static int sdx_sec_mi2s_mode_get(struct snd_kcontrol *kcontrol,
+				 struct snd_ctl_elem_value *ucontrol)
+{
+	pr_debug("%s sdx_sec_mi2s_mode %d\n", __func__, sdx_sec_mi2s_mode);
+	ucontrol->value.integer.value[0] = sdx_sec_mi2s_mode;
+	return 0;
+}
+
+static int sdx_sec_mi2s_mode_put(struct snd_kcontrol *kcontrol,
+				 struct snd_ctl_elem_value *ucontrol)
+{
+	switch (ucontrol->value.integer.value[0]) {
+	case 1:
+		sdx_sec_mi2s_mode = I2S_PCM_MASTER_MODE;
+		break;
+	case 0:
+		sdx_sec_mi2s_mode = I2S_PCM_SLAVE_MODE;
+		break;
+	default:
+		sdx_sec_mi2s_mode = I2S_PCM_MASTER_MODE;
+		break;
+	}
+	pr_debug("%s: sdx_sec_mi2s_mode = %d ucontrol->value = %d\n",
+		 __func__, sdx_sec_mi2s_mode,
+		 (int)ucontrol->value.integer.value[0]);
+	return 0;
+}
+
+static int sdx_tert_mi2s_mode_get(struct snd_kcontrol *kcontrol,
+				 struct snd_ctl_elem_value *ucontrol)
+{
+	pr_debug("%s sdx_tert_mi2s_mode %d\n", __func__, sdx_tert_mi2s_mode);
+	ucontrol->value.integer.value[0] = sdx_tert_mi2s_mode;
+	return 0;
+}
+
+static int sdx_tert_mi2s_mode_put(struct snd_kcontrol *kcontrol,
+				 struct snd_ctl_elem_value *ucontrol)
+{
+	switch (ucontrol->value.integer.value[0]) {
+	case 1:
+		sdx_tert_mi2s_mode = I2S_PCM_MASTER_MODE;
+		break;
+	case 0:
+		sdx_tert_mi2s_mode = I2S_PCM_SLAVE_MODE;
+		break;
+	default:
+		sdx_tert_mi2s_mode = I2S_PCM_MASTER_MODE;
+		break;
+	}
+	pr_debug("%s: sdx_tert_mi2s_mode = %d ucontrol->value = %d\n",
+		 __func__, sdx_tert_mi2s_mode,
+		 (int)ucontrol->value.integer.value[0]);
+	return 0;
+}
+
+static int sdx_auxpcm_mode_get(struct snd_kcontrol *kcontrol,
+			       struct snd_ctl_elem_value *ucontrol)
+{
+	pr_debug("%s sdx_auxpcm_mode %d\n", __func__, sdx_auxpcm_mode);
+	ucontrol->value.integer.value[0] = sdx_auxpcm_mode;
+	return 0;
+}
+
+static int sdx_auxpcm_mode_put(struct snd_kcontrol *kcontrol,
+			       struct snd_ctl_elem_value *ucontrol)
+{
+	switch (ucontrol->value.integer.value[0]) {
+	case 1:
+		sdx_auxpcm_mode = I2S_PCM_MASTER_MODE;
+		break;
+	case 0:
+		sdx_auxpcm_mode = I2S_PCM_SLAVE_MODE;
+		break;
+	default:
+		sdx_auxpcm_mode = I2S_PCM_MASTER_MODE;
+		break;
+	}
+	pr_debug("%s: sdx_auxpcm_mode = %d ucontrol->value = %d\n",
+		 __func__, sdx_auxpcm_mode,
+		 (int)ucontrol->value.integer.value[0]);
+	return 0;
+}
+
+static int sdx_sec_auxpcm_mode_get(struct snd_kcontrol *kcontrol,
+				   struct snd_ctl_elem_value *ucontrol)
+{
+	pr_debug("%s sdx_sec_auxpcm_mode %d\n", __func__, sdx_sec_auxpcm_mode);
+	ucontrol->value.integer.value[0] = sdx_sec_auxpcm_mode;
+	return 0;
+}
+
+static int sdx_sec_auxpcm_mode_put(struct snd_kcontrol *kcontrol,
+				   struct snd_ctl_elem_value *ucontrol)
+{
+	switch (ucontrol->value.integer.value[0]) {
+	case 1:
+		sdx_sec_auxpcm_mode = I2S_PCM_MASTER_MODE;
+		break;
+	case 0:
+		sdx_sec_auxpcm_mode = I2S_PCM_SLAVE_MODE;
+		break;
+	default:
+		sdx_sec_auxpcm_mode = I2S_PCM_MASTER_MODE;
+		break;
+	}
+	pr_debug("%s: sdx_sec_auxpcm_mode = %d ucontrol->value = %d\n",
+		 __func__, sdx_sec_auxpcm_mode,
+		 (int)ucontrol->value.integer.value[0]);
+	return 0;
+}
+
+static int sdx_tert_auxpcm_mode_get(struct snd_kcontrol *kcontrol,
+				   struct snd_ctl_elem_value *ucontrol)
+{
+	pr_debug("%s sdx_tert_auxpcm_mode %d\n", __func__, sdx_tert_auxpcm_mode);
+	ucontrol->value.integer.value[0] = sdx_tert_auxpcm_mode;
+	return 0;
+}
+
+static int sdx_tert_auxpcm_mode_put(struct snd_kcontrol *kcontrol,
+				   struct snd_ctl_elem_value *ucontrol)
+{
+	switch (ucontrol->value.integer.value[0]) {
+	case 1:
+		sdx_tert_auxpcm_mode = I2S_PCM_MASTER_MODE;
+		break;
+	case 0:
+		sdx_tert_auxpcm_mode = I2S_PCM_SLAVE_MODE;
+		break;
+	default:
+		sdx_tert_auxpcm_mode = I2S_PCM_MASTER_MODE;
+		break;
+	}
+	pr_debug("%s: sdx_tert_auxpcm_mode = %d ucontrol->value = %d\n",
+		 __func__, sdx_tert_auxpcm_mode,
+		 (int)ucontrol->value.integer.value[0]);
+	return 0;
 }
 
 static int sdx_tdm_startup(struct snd_pcm_substream *substream)
@@ -640,24 +769,12 @@ static int sdx_tdm_startup(struct snd_pcm_substream *substream)
 				//Disable mlck here
 			}
 		} else {
-			/*
-			 * Disable bit clk in slave mode for QC codec.
-			 * Enable only mclk.
-			 */
-			struct clk_cfg intf_clk_cfg;
 			ret = msm_cdc_pinctrl_select_alt_active_state
 				(pdata->prim_master_slave_p);
 			if (ret < 0) {
 				pr_err("%s pinctrl set failed\n", __func__);
 				goto done;
 			}
-			intf_clk_cfg.clk_freq_in_hz = SDX_MCLK_CLK_12P288MHZ;
-			intf_clk_cfg.clk_attri = CLOCK_ATTRIBUTE_COUPLE_NO;
-			intf_clk_cfg.clk_root = 0;
-			ret = audio_prm_set_lpass_clk_cfg(&intf_clk_cfg, 0);
-			if (ret < 0) {
-				pr_err("%s set lpass clk set failed\n", __func__);
-            }
 		}
 		audio_prm_set_lpass_core_clk_req( NULL, 1, 0);
 	}
@@ -746,6 +863,11 @@ static int sdx_auxpcm_startup(struct snd_pcm_substream *substream)
 		 * Disable bit clk in slave mode for QC codec.
 		 * Enable only mclk.
 		 */
+		ret = msm_cdc_pinctrl_select_alt_active_state(pdata->prim_master_slave_p);
+		if (ret < 0) {
+			pr_err("%s pinctrl set failed\n", __func__);
+			goto done;
+		}
 	}
 	audio_prm_set_lpass_core_clk_req( NULL, 1, 0);
 done:
@@ -825,6 +947,11 @@ static int sdx_sec_auxpcm_startup(struct snd_pcm_substream *substream)
 		 * Disable bit clk in slave mode for QC codec.
 		 * Enable only mclk.
 		 */
+		ret = msm_cdc_pinctrl_select_alt_active_state(pdata->sec_master_slave_p);
+		if (ret < 0) {
+			pr_err("%s pinctrl set failed\n", __func__);
+			goto done;
+		}
 	}
 	audio_prm_set_lpass_core_clk_req( NULL, 1, 0);
 done:
@@ -903,6 +1030,12 @@ static int sdx_tert_auxpcm_startup(struct snd_pcm_substream *substream)
 		 * Disable bit clk in slave mode for QC codec.
 		 * Enable only mclk.
 		 */
+		ret = msm_cdc_pinctrl_select_alt_active_state
+				(pdata->tert_master_slave_p);
+		if (ret < 0) {
+			pr_err("%s pinctrl set failed\n", __func__);
+			goto done;
+		}
 	}
 	audio_prm_set_lpass_core_clk_req( NULL, 1, 0);
 done:
@@ -1352,6 +1485,34 @@ static const struct of_device_id sdx_asoc_machine_of_match[]  = {
 	{},
 };
 
+static const char *const mode_text[] = {"slave", "master"};
+
+static const struct soc_enum sdx_enum[] = {
+	SOC_ENUM_SINGLE_EXT(2, mode_text),
+};
+
+static const struct snd_kcontrol_new sdx_snd_controls[] = {
+	SOC_ENUM_EXT("MI2S Mode", sdx_enum[0],
+				 sdx_mi2s_mode_get,
+				 sdx_mi2s_mode_put),
+	SOC_ENUM_EXT("SEC_MI2S Mode", sdx_enum[0],
+				 sdx_sec_mi2s_mode_get,
+				 sdx_sec_mi2s_mode_put),
+	SOC_ENUM_EXT("TERT_MI2S Mode", sdx_enum[0],
+				 sdx_tert_mi2s_mode_get,
+				 sdx_tert_mi2s_mode_put),
+	SOC_ENUM_EXT("AUXPCM Mode", sdx_enum[0],
+				 sdx_auxpcm_mode_get,
+				 sdx_auxpcm_mode_put),
+	SOC_ENUM_EXT("SEC_AUXPCM Mode", sdx_enum[0],
+				 sdx_sec_auxpcm_mode_get,
+				 sdx_sec_auxpcm_mode_put),
+	SOC_ENUM_EXT("TERT_AUXPCM Mode", sdx_enum[0],
+				 sdx_tert_auxpcm_mode_get,
+				 sdx_tert_auxpcm_mode_put),
+};
+
+
 static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 {
 	struct snd_soc_card *card = NULL;
@@ -1420,6 +1581,8 @@ static int msm_int_audrx_init(struct snd_soc_pcm_runtime *rtd)
 	struct msm_asoc_mach_data *pdata =
 				snd_soc_card_get_drvdata(rtd->card);
 	int ret = 0;
+	struct snd_soc_dai *codec_dai = asoc_rtd_to_codec(rtd, 0);
+	struct snd_soc_component *component = NULL;
 
 	card = rtd->card->snd_card;
 	if (!pdata->codec_root) {
@@ -1435,6 +1598,15 @@ static int msm_int_audrx_init(struct snd_soc_pcm_runtime *rtd)
 	}
 	msm_common_dai_link_init(rtd);
 
+	component = codec_dai->component;
+
+	ret = snd_soc_add_component_controls(component, sdx_snd_controls,
+					 ARRAY_SIZE(sdx_snd_controls));
+	if (ret < 0) {
+		pr_err("%s: add_codec_controls failed, %d\n",
+		       __func__, ret);
+		goto err;
+	}
 err:
 	return ret;
 }

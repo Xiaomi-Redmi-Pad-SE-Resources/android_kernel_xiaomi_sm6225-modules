@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _MONACO_PORT_CONFIG
@@ -53,6 +53,16 @@ static struct port_params rx_frame_params_besbev[SWR_MSTR_PORT_LEN] = {
 	{3,  3,  0,  0xFF, 0xFF, 0xFF, 0x1, 0xFF,  0, 1, 1}, /* AMIC PCM IN */
 };
 
+static struct port_params rx_frame_params_visense[SWR_MSTR_PORT_LEN] = {
+	{3,  0,  0,  0xFF, 0xFF, 1,    0xFF, 0xFF, 1, 0, 0},
+	{31, 0,  0,  3,    6,    7,    0,    0xFF, 0, 0, 0},
+	{31, 1,  0,  0xFF, 0xFF, 4,    1,    0xFF, 0, 0, 0},
+	{7,  1,  0,  0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0, 0, 0}, /* AUX OUT */
+	{0,  0,  0,  0xFF, 0xFF, 0xFF, 0xFF, 0,    0, 0, 0},
+	{0,  0,  0,  0xFF, 0xFF, 0xFF, 0xFF, 0,    0, 0, 0},
+	{7,  3,  0,  0xFF, 0xFF, 0xFF, 0x1,  0xFF, 0xFF, 1, 1}, /* VISENSE PCM IN */
+};
+
 static struct swr_mstr_port_map sm_port_map[] = {
 	{VA_MACRO, SWR_UC0, tx_frame_params_default},
 	{RX_MACRO, SWR_UC0, rx_frame_params_default},
@@ -62,6 +72,7 @@ static struct swr_mstr_port_map sm_port_map[] = {
 static struct swr_mstr_port_map sm_port_map_besbev[] = {
 	{VA_MACRO, SWR_UC0, tx_frame_params_besbev},
 	{RX_MACRO, SWR_UC0, rx_frame_params_besbev},
+	{RX_MACRO, SWR_UC0, rx_frame_params_visense},
 };
 
 #endif /* _MONACO_PORT_CONFIG */
