@@ -119,15 +119,18 @@ module_entry(
          "CONFIG_DRM_MSM_DSI" : [
             "msm/dsi/dsi_phy.c",
             "msm/dsi/dsi_pwr.c",
+            "msm/dsi/dsi_phy_hw_v2_0.c",
             "msm/dsi/dsi_phy_hw_v3_0.c",
             "msm/dsi/dsi_phy_hw_v4_0.c",
             "msm/dsi/dsi_phy_hw_v5_0.c",
             "msm/dsi/dsi_phy_timing_calc.c",
+            "msm/dsi/dsi_phy_timing_v2_0.c",
             "msm/dsi/dsi_phy_timing_v3_0.c",
             "msm/dsi/dsi_phy_timing_v4_0.c",
             "msm/dsi/dsi_pll.c",
             "msm/dsi/dsi_pll_5nm.c",
             "msm/dsi/dsi_pll_4nm.c",
+            "msm/dsi/dsi_pll_14nm.c",
             "msm/dsi/dsi_ctrl_hw_cmn.c",
             "msm/dsi/dsi_ctrl_hw_2_2.c",
             "msm/dsi/dsi_ctrl.c",
@@ -178,7 +181,5 @@ module_entry(
          "//vendor/qcom/opensource/mm-drivers/hw_fence:%b_msm_hw_fence",
          "//vendor/qcom/opensource/mm-drivers/sync_fence:%b_sync_fence",
          "//vendor/qcom/opensource/mm-drivers/msm_ext_display:%b_msm_ext_display",
-         "//vendor/qcom/opensource/mmrm-driver:%b_mmrm_driver",
-         "//vendor/qcom/opensource/securemsm-kernel:%b_hdcp_qseecom_dlkm"
       ],
 )
