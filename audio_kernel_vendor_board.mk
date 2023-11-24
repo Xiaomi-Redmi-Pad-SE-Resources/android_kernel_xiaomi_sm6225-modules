@@ -15,6 +15,10 @@ else
   AUDIO_DLKM_ENABLE := true
 endif
 
+ifeq ($(TARGET_USES_AUDIOLITE), true)
+  AUDIO_DLKM_ENABLE := false
+endif
+
 ifeq ($(AUDIO_DLKM_ENABLE), true)
   ifeq ($(call is-board-platform-in-list,taro kalama bengal monaco msmnile gen4), true)
     include vendor/qcom/opensource/audio-kernel/audio_kernel_modules.mk
