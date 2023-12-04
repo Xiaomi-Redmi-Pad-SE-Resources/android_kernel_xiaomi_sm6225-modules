@@ -615,6 +615,9 @@ static int dp_power_config_gpios(struct dp_power_private *power, bool flip,
 	mp = &power->parser->mp[DP_CORE_PM];
 	config = mp->gpio_config;
 
+	if (IS_ERR_OR_NULL(config))
+		return 0;
+
 	if (enable) {
 		rc = dp_power_request_gpios(power);
 		if (rc) {
