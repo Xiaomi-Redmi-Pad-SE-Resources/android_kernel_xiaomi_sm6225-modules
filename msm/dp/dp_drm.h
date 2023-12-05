@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
+ * Copyright (c) 2023, Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -132,6 +133,17 @@ int dp_connector_get_info(struct drm_connector *connector,
 void dp_connector_post_open(struct drm_connector *connector, void *display);
 
 /**
+ * dp_conn_set_info_blob - callback to perform info blob initialization
+ * @connector: Pointer to drm connector structure
+ * @info: Pointer to sde connector info structure
+ * @display: Pointer to private display handle
+ * @mode_info: Pointer to mode info structure
+ * Returns: Zero on success
+ */
+int dp_connnector_set_info_blob(struct drm_connector *connector,
+		void *info, void *display, struct msm_mode_info *mode_info);
+
+/**
  * dp_drm_bridge_init- drm dp bridge initialize
  * @display: Pointer to private display structure
  * @encoder: encoder for this dp bridge
@@ -234,6 +246,12 @@ static inline int dp_connector_get_info(struct drm_connector *connector,
 static inline void dp_connector_post_open(struct drm_connector *connector,
 		void *display)
 {
+}
+
+static inline int dp_connnector_set_info_blob(struct drm_connector *connector,
+		void *info, void *display, struct msm_mode_info *mode_info)
+{
+	return 0;
 }
 
 static inline int dp_drm_bridge_init(void *display, struct drm_encoder *encoder,
