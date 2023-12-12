@@ -143,6 +143,7 @@ LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/Build_external_kernelmodule.mk
 ########################### CC_IPC ################################
 ifeq ($(call is-board-platform-in-list, monaco),true)
+ifeq ($(TARGET_SUPPORTS_WEAR_AON),true)
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
 LOCAL_MODULE              := audio_cc_ipc_dlkm.ko
@@ -151,6 +152,7 @@ LOCAL_MODULE_TAGS         := optional
 LOCAL_MODULE_DEBUG_ENABLE := true
 LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/Build_external_kernelmodule.mk
+endif
 endif
 
 ###########################################################
@@ -567,6 +569,7 @@ endif
 
 ########################### CC ################################
 ifeq ($(call is-board-platform-in-list, monaco),true)
+ifeq ($(TARGET_SUPPORTS_WEAR_AON),true)
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
 LOCAL_MODULE              := cc_dlkm.ko
@@ -575,6 +578,7 @@ LOCAL_MODULE_TAGS         := optional
 LOCAL_MODULE_DEBUG_ENABLE := true
 LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
 include $(DLKM_DIR)/Build_external_kernelmodule.mk
+endif
 endif
 
 ###########################################################
