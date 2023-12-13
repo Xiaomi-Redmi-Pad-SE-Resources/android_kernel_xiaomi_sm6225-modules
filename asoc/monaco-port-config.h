@@ -71,8 +71,10 @@ static struct swr_mstr_port_map sm_port_map[] = {
 
 static struct swr_mstr_port_map sm_port_map_besbev[] = {
 	{VA_MACRO, SWR_UC0, tx_frame_params_besbev},
-	{RX_MACRO, SWR_UC0, rx_frame_params_besbev},
 	{RX_MACRO, SWR_UC0, rx_frame_params_visense},
 };
 
+static struct swr_mstr_port_map sm_port_map_besbev_amic[] = {
+	{RX_MACRO, SWR_UC0, rx_frame_params_besbev},
+};
 #endif /* _MONACO_PORT_CONFIG */
