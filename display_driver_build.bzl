@@ -2,7 +2,7 @@ load("//build/kernel/kleaf:kernel.bzl", "ddk_module", "ddk_submodule")
 load("//build/bazel_common_rules/dist:dist.bzl", "copy_to_dist_dir")
 load("//msm-kernel:target_variants.bzl", "get_all_variants")
 
-def _register_module_to_map(module_map, name, path, config_option, srcs, config_srcs, deps, config_deps):
+def _register_module_to_map(module_map, name, path, config_option, srcs, config_srcs):
     processed_config_srcs = {}
     nested_config = {}
 
@@ -27,7 +27,6 @@ def _register_module_to_map(module_map, name, path, config_option, srcs, config_
         srcs = srcs,
         config_srcs = processed_config_srcs,
         config_option = config_option,
-        deps = deps,
     )
 
     module_map[name] = module
@@ -49,14 +48,14 @@ def _get_kernel_build_module_srcs(module, options, formatter):
     module_path = "{}/".format(module.path) if module.path else ""
     return ["{}{}".format(module_path, formatter(src)) for src in srcs]
 
-def _get_kernel_build_module_deps(module, options, formatter):
-    return [formatter(dep) for dep in module.deps]
+def _get_kernel_build_module_deps(deps_l, options, formatter):
+    return [formatter(dep) for dep in deps_l]
 
 def display_module_entry(hdrs = []):
     module_map = {}
 
-    def register(name, path = None, config_option = None, srcs = [], config_srcs = {}, deps = [], config_deps = {}):
-        _register_module_to_map(module_map, name, path, config_option, srcs, config_srcs, deps, config_deps)
+    def register(name, path = None, config_option = None, srcs = [], config_srcs = {}):
+        _register_module_to_map(module_map, name, path, config_option, srcs, config_srcs)
     return struct(
         register = register,
         get = module_map.get,
@@ -64,7 +63,7 @@ def display_module_entry(hdrs = []):
         module_map = module_map
     )
 
-def define_target_variant_modules(target, variant, registry, modules, config_options = []):
+def define_target_variant_modules(target, variant, registry, modules, config_options = [], deps_l = []):
     kernel_build = "{}_{}".format(target, variant)
     kernel_build_label = "//msm-kernel:{}".format(kernel_build)
     modules = [registry.get(module_name) for module_name in modules]
@@ -85,7 +84,7 @@ def define_target_variant_modules(target, variant, registry, modules, config_opt
             name = rule_name,
             srcs = module_srcs,
             out = "{}.ko".format(module.name),
-            deps = headers + _get_kernel_build_module_deps(module, options, formatter),
+            deps = headers + _get_kernel_build_module_deps(deps_l, options, formatter),
             local_defines = options.keys(),
         )
         all_module_rules.append(rule_name)
@@ -106,6 +105,6 @@ def define_target_variant_modules(target, variant, registry, modules, config_opt
         log = "info",
     )
 
-def define_consolidate_gki_modules(target, registry, modules, config_options = []):
+def define_consolidate_gki_modules(target, registry, modules, config_options = [], deps_l = []):
     for (targets, variant) in get_all_variants():
-        define_target_variant_modules(targets, variant, registry, modules, config_options)
+        define_target_variant_modules(targets, variant, registry, modules, config_options, deps_l)
