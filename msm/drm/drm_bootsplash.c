@@ -1,3 +1,6 @@
+/*
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ */
 #include <linux/delay.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -18,6 +21,7 @@
 #include "dp_display.h"
 
 static bool drm_bootsplash_enabled;
+static int drm_bootsplash_delay;
 module_param_named(bootsplash_enabled, drm_bootsplash_enabled, bool, 0664);
 
 static void drm_bootsplash_client_unregister(struct drm_client_dev *client);
@@ -36,8 +40,14 @@ struct drm_bootsplash {
 
 static void is_drm_bootsplash_enabled(struct device *dev)
 {
+	int rc = 0;
 	drm_bootsplash_enabled = of_property_read_bool(dev->of_node,
 		"qcom,sde-drm-fb-splash-logo-enabled");
+
+	rc = of_property_read_u32(dev->of_node,
+		"qcom,drm-bootsplash-delay", &drm_bootsplash_delay);
+	if (rc)
+		drm_bootsplash_delay = 5000;
 }
 
 static void drm_bootsplash_buffer_delete(struct drm_bootsplash *splash)
@@ -228,7 +238,7 @@ static void drm_bootsplash_worker(struct work_struct *work)
 	if (stop || ret == -ENOENT || ret == -EBUSY)
 		goto skip;
 
-	msleep(5000);
+	msleep(drm_bootsplash_delay);
 
 	splash->stop = true;
 
