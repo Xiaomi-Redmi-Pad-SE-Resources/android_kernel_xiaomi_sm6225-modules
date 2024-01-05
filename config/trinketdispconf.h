@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
- * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #define CONFIG_DRM_MSM 1
@@ -15,3 +15,4 @@
 #define CONFIG_MSM_SDE_ROTATOR 1
 #define CONFIG_MSM_SDE_ROTATOR_EVTLOG_DEBUG 1
 #define CONFIG_DRM_SDE_RSC 1
+#define CONFIG_DRM_CLIENT_BOOTSPLASH 1
