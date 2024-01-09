@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2019-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 #ifndef _MSM_AUDIO_DEFS_H
 #define _MSM_AUDIO_DEFS_H
@@ -72,8 +72,13 @@
 #define LPASS_BE_SLIMBUS_7_TX "SLIM-DEV1-TX-7"
 #define LPASS_BE_SLIMBUS_8_TX "SLIM-DEV1-TX-8"
 
+#ifdef CONFIG_MI2S_BOLERO_V2_1
+#define LPASS_BE_PRI_TDM_RX_0 "TDM-LPAIF_VA-RX-PRIMARY"
+#define LPASS_BE_PRI_TDM_TX_0 "TDM-LPAIF_VA-TX-PRIMARY"
+#else
 #define LPASS_BE_PRI_TDM_RX_0 "TDM-LPAIF-RX-PRIMARY"
 #define LPASS_BE_PRI_TDM_TX_0 "TDM-LPAIF-TX-PRIMARY"
+#endif
 #define LPASS_BE_SEC_TDM_RX_0 "TDM-LPAIF-RX-SECONDARY"
 #define LPASS_BE_SEC_TDM_TX_0 "TDM-LPAIF-TX-SECONDARY"
 #define LPASS_BE_TERT_TDM_RX_0 "TDM-LPAIF-RX-TERTIARY"
