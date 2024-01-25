@@ -177,9 +177,4 @@ module_entry(
                               "rotator/sde_rotator_r3_debug.c"],
             },
       },
-      deps = [
-         "//vendor/qcom/opensource/mm-drivers/hw_fence:%b_msm_hw_fence",
-         "//vendor/qcom/opensource/mm-drivers/sync_fence:%b_sync_fence",
-         "//vendor/qcom/opensource/mm-drivers/msm_ext_display:%b_msm_ext_display",
-      ],
 )

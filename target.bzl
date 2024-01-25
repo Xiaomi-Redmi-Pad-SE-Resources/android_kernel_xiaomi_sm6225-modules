@@ -16,4 +16,9 @@ def define_monaco():
             "CONFIG_QCOM_MDSS_PLL",
             "CONFIG_THERMAL_OF",
         ],
+#-------To add deps in other target-----------
+#       deps = [
+#       "//vendor/qcom/opensource/mm-drivers/hw_fence:%b_msm_hw_fence",
+#       ]
+        deps_l = [],
 )
