@@ -544,7 +544,18 @@ static int msm_int_audrx_init(struct snd_soc_pcm_runtime *rtd)
 		besbev_info_create_codec_entry(pdata->codec_root, component);
 		bolero_set_port_map(bolero_component,
 			ARRAY_SIZE(sm_port_map_besbev), sm_port_map_besbev);
-		besbev_amic_init(component);
+		/* SWR port 7 is used for AMIC IN and VI SENSE IN,
+		 * first set port map with VI SENSE port config and
+		 * if amic_init is success overwrite with AMIC IN port config
+		 */
+		ret = besbev_amic_init(component);
+		if (!ret) {
+			/* For AMIC Variant Speaker Protection is not supported
+			 * thus VI SENSE port config is not updated here
+			 */
+			bolero_set_port_map(bolero_component,
+			ARRAY_SIZE(sm_port_map_besbev_amic), sm_port_map_besbev_amic);
+		}
 	} else if (!strncmp(component->driver->name, "wsa-codec.1",
 						strlen("wsa-codec.1"))) {
 		bolero_set_port_map(bolero_component,

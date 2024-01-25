@@ -433,12 +433,12 @@ set_gpio:
 	val |= pad->pullup << LPI_GPIO_REG_PULL_SHIFT;
 	val |= lpi_drive_to_regval(pad->strength) <<
 		LPI_GPIO_REG_OUT_STRENGTH_SHIFT;
-	if (pad->output_enabled)
-		val |= pad->value << LPI_GPIO_REG_OE_SHIFT;
+	val |= pad->output_enabled << LPI_GPIO_REG_OE_SHIFT;
 
 	lpi_gpio_write(pad, LPI_GPIO_REG_VAL_CTL, val);
-	lpi_gpio_write(pad, LPI_GPIO_REG_DIR_CTL,
-		       pad->output_enabled << LPI_GPIO_REG_DIR_SHIFT);
+	if (pad->output_enabled)
+		lpi_gpio_write(pad, LPI_GPIO_REG_DIR_CTL,
+			pad->value << LPI_GPIO_REG_DIR_SHIFT);
 done:
 	return ret;
 }
