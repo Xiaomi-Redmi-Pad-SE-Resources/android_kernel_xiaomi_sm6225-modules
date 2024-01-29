@@ -86,6 +86,7 @@ def define_target_variant_modules(target, variant, registry, modules, config_opt
             out = "{}.ko".format(module.name),
             deps = headers + _get_kernel_build_module_deps(deps_l, options, formatter),
             local_defines = options.keys(),
+            copts = ["-Wno-frame-larger-than"],
         )
         all_module_rules.append(rule_name)
 
