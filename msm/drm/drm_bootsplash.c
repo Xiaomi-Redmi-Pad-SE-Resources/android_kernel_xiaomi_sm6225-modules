@@ -297,7 +297,6 @@ static void drm_bootsplash_client_unregister(struct drm_client_dev *client)
 
 	flush_work(&splash->worker);
 
-	drm_client_release(client);
 	kfree(splash);
 }
 
