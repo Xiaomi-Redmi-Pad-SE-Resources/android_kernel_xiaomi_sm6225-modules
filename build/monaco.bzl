@@ -15,7 +15,6 @@ def define_monaco():
             "q6_pdr_dlkm",
             "gpr_dlkm",
             "audio_pkt_dlkm",
-            "audio_cc_ipc_dlkm",
             "pinctrl_lpi_dlkm",
             "swr_dlkm",
             "swr_ctrl_dlkm",
@@ -32,6 +31,7 @@ def define_monaco():
             "besbev_dlkm",
             "pmw5100-spmi_dlkm",
             "besbev-slave_dlkm",
+            "audio_cc_ipc_dlkm",
             "cc_dlkm",
         ],
         config_options = [
@@ -42,5 +42,7 @@ def define_monaco():
             "CONFIG_SOUNDWIRE_MSTR_CTRL",
             "CONFIG_WCD9XXX_CODEC_CORE_V2",
             "CONFIG_SND_SOC_WCD9XXX_V2",
+            "CONFIG_SND_SOC_CC",
+            "CONFIG_AUDIO_CC_IPC",
         ],
     )
