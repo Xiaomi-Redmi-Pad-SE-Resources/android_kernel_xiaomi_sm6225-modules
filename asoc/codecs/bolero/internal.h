@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _BOLERO_INTERNAL_H
@@ -47,6 +48,7 @@ struct bolero_priv {
 	struct clk *lpass_audio_hw_vote;
 	int core_hw_vote_count;
 	int core_audio_vote_count;
+	int core_clk_vote_count;
 
 	/* Entry for version info */
 	struct snd_info_entry *entry;
