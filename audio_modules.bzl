@@ -77,6 +77,10 @@ audio_modules.register(
                 "audio-cc-ipc.c",
             ],
         },
+    conditional_srcs = {
+        "CONFIG_AUDIO_CC_IPC":[
+                "audio-cc-ipc.c",
+            ],
     },
 )
 # >>>> SOC MODULES <<<<
@@ -265,5 +269,10 @@ audio_modules.register(
                 "cc_pktzr.c",
             ],
         },
+   conditional_srcs = {
+        "CONFIG_SND_SOC_CC": [
+                "cc_codec.c",
+                "cc_pktzr.c",
+            ],
     },
 )

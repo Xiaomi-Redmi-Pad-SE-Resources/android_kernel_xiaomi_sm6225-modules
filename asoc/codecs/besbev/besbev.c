@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -184,34 +184,6 @@ static int besbev_handle_post_irq(void *data)
 			((sts1 || sts2) ? true : false);
 
 	return IRQ_HANDLED;
-}
-
-static int besbev_swr_ctrl(struct snd_soc_dapm_widget *w,
-					struct snd_kcontrol *kcontrol,
-					int event)
-{
-	int ret = 0;
-	struct snd_soc_component *component =
-			snd_soc_dapm_to_component(w->dapm);
-	struct besbev_priv *besbev = snd_soc_component_get_drvdata(component);
-
-	if (!besbev) {
-		dev_err(component->dev, "%s: besbev is NULL\n", __func__);
-		return -EINVAL;
-	}
-
-	switch (event) {
-	case SND_SOC_DAPM_PRE_PMU:
-		ret = swr_slvdev_datapath_control(besbev->swr_dev,
-					besbev->swr_dev->dev_num, true);
-		break;
-	case SND_SOC_DAPM_POST_PMD:
-		ret = swr_slvdev_datapath_control(besbev->swr_dev,
-					besbev->swr_dev->dev_num, false);
-		break;
-	};
-
-	return ret;
 }
 
 static int besbev_init_reg(struct snd_soc_component *component,
@@ -419,6 +391,50 @@ static int besbev_rx_connect_port(struct snd_soc_component *component,
 	return ret;
 }
 
+static int besbev_swr_ctrl(struct snd_soc_dapm_widget *w,
+					struct snd_kcontrol *kcontrol,
+					int event)
+{
+	int ret = 0;
+	struct snd_soc_component *component =
+			snd_soc_dapm_to_component(w->dapm);
+	struct besbev_priv *besbev = snd_soc_component_get_drvdata(component);
+
+	if (!besbev) {
+		dev_err(component->dev, "%s: besbev is NULL\n", __func__);
+		return -EINVAL;
+	}
+
+	switch (event) {
+	case SND_SOC_DAPM_PRE_PMU:
+		ret = swr_slvdev_datapath_control(besbev->swr_dev,
+					besbev->swr_dev->dev_num, true);
+		break;
+	case SND_SOC_DAPM_POST_PMD:
+		if (besbev->speaker_present == true)
+			besbev_rx_connect_port(component, ADC1 + (w->shift),
+						false);
+		else
+			besbev_tx_connect_port(component, ADC1 + (w->shift),
+						false);
+		if (w->shift) {
+			snd_soc_component_update_bits(component,
+				BESBEV_ANA_TX_MISC_CTL, 0x02, 0x00);
+			snd_soc_component_update_bits(component,
+				BESBEV_DIG_SWR_CDC_TX_MODE, 0x30, 0x00);
+		} else {
+			snd_soc_component_update_bits(component,
+				BESBEV_ANA_TX_MISC_CTL, 0x04, 0x00);
+			snd_soc_component_update_bits(component,
+				BESBEV_DIG_SWR_CDC_TX_MODE, 0x03, 0x00);
+		}
+		besbev_global_mbias_disable(component);
+		break;
+	};
+
+	return ret;
+}
+
 int besbev_global_mbias_enable(struct snd_soc_component *component)
 {
 	struct besbev_priv *besbev = snd_soc_component_get_drvdata(component);
@@ -508,24 +524,8 @@ static int besbev_codec_enable_adc(struct snd_soc_dapm_widget *w,
 		}
 		break;
 	case SND_SOC_DAPM_POST_PMD:
-		if (besbev->speaker_present == true)
-			besbev_rx_connect_port(component, ADC1 + (w->shift),
-						false);
-		else
-			besbev_tx_connect_port(component, ADC1 + (w->shift),
-						false);
-		if (w->shift) {
-			snd_soc_component_update_bits(component,
-				BESBEV_ANA_TX_MISC_CTL, 0x02, 0x00);
-			snd_soc_component_update_bits(component,
-				BESBEV_DIG_SWR_CDC_TX_MODE, 0x30, 0x00);
-		} else {
-			snd_soc_component_update_bits(component,
-				BESBEV_ANA_TX_MISC_CTL, 0x04, 0x00);
-			snd_soc_component_update_bits(component,
-				BESBEV_DIG_SWR_CDC_TX_MODE, 0x03, 0x00);
-		}
-		besbev_global_mbias_disable(component);
+		swr_slvdev_datapath_control(besbev->swr_dev,
+					besbev->swr_dev->dev_num, false);
 		break;
 	};
 
