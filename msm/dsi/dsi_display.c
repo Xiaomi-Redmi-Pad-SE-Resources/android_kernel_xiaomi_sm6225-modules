@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021-2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -4543,7 +4543,10 @@ void dsi_display_update_byte_intf_div(struct dsi_display *display)
 	config = &display->panel->host_config;
 
 	phy_ver = dsi_phy_get_version(m_ctrl->phy);
-	config->byte_intf_clk_div = 2;
+	if (phy_ver <= DSI_PHY_VERSION_2_0)
+		config->byte_intf_clk_div = 1;
+	else
+		config->byte_intf_clk_div = 2;
 }
 
 static int dsi_display_update_dsi_bitrate(struct dsi_display *display,
