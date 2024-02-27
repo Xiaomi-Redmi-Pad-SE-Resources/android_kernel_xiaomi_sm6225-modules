@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /* Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/of_platform.h>
@@ -970,7 +970,6 @@ static void bolero_ssr_disable(struct device *dev, void *data)
 		return;
 	}
 
-	bolero_cdc_notifier_call(priv, BOLERO_SLV_EVT_PA_OFF_PRE_SSR);
 	regcache_cache_only(priv->regmap, true);
 
 	mutex_lock(&priv->clk_lock);
@@ -1523,12 +1522,24 @@ audio_vote:
 			if (__ratelimit(&rtl))
 				dev_err(dev, "%s:lpass audio hw enable failed\n",
 					__func__);
-			goto done;
+			goto core_clk_vote;
 		}
 	}
 	priv->core_audio_vote_count++;
 	trace_printk("%s: audio vote count %d\n",
 		__func__, priv->core_audio_vote_count);
+
+core_clk_vote:
+	if (priv->core_clk_vote_count == 0) {
+		ret = bolero_clk_rsc_request_clock(dev, TX_CORE_CLK,
+							TX_CORE_CLK, true);
+		if (ret < 0) {
+			dev_err_ratelimited(dev, "%s:lpass Tx core clk enable failed\n",
+				__func__);
+			goto done;
+		}
+	}
+	priv->core_clk_vote_count++;
 
 done:
 	mutex_unlock(&priv->vote_lock);
@@ -1567,6 +1578,15 @@ int bolero_runtime_suspend(struct device *dev)
 	}
 	trace_printk("%s: audio vote count %d\n",
 		__func__, priv->core_audio_vote_count);
+
+	if (--priv->core_clk_vote_count == 0) {
+		bolero_clk_rsc_request_clock(dev, TX_CORE_CLK,
+						  TX_CORE_CLK, false);
+	}
+	if (priv->core_clk_vote_count < 0)
+		priv->core_clk_vote_count = 0;
+	trace_printk("%s: core clk vote count %d\n",
+		__func__, priv->core_clk_vote_count);
 
 	mutex_unlock(&priv->vote_lock);
 	return 0;
