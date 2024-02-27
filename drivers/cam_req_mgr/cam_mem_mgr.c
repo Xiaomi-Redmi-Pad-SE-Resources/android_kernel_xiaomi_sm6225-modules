@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -661,7 +661,6 @@ static int cam_mem_util_buffer_alloc(struct cam_mem_mgr_alloc_cmd *cmd,
 	int *fd)
 {
 	int rc;
-	struct dma_buf *temp_dmabuf = NULL;
 
 	rc = cam_mem_util_get_dma_buf(cmd->len,
 		cmd->flags,
@@ -673,6 +672,13 @@ static int cam_mem_util_buffer_alloc(struct cam_mem_mgr_alloc_cmd *cmd,
 		return rc;
 	}
 
+	/*
+	 * increment the ref count so that ref count becomes 2 here
+	 * when we close fd, refcount becomes 1 and when we do
+	 * dmap_put_buf, ref count becomes 0 and memory will be freed.
+	 */
+	get_dma_buf(*dmabuf);
+
 	*fd = dma_buf_fd(*dmabuf, O_CLOEXEC);
 	if (*fd < 0) {
 		CAM_ERR(CAM_MEM, "get fd fail, *fd=%d", *fd);
@@ -682,18 +688,6 @@ static int cam_mem_util_buffer_alloc(struct cam_mem_mgr_alloc_cmd *cmd,
 
 	CAM_DBG(CAM_MEM, "Alloc success : len=%zu, *dmabuf=%pK, fd=%d",
 		cmd->len, *dmabuf, *fd);
-
-	/*
-	 * increment the ref count so that ref count becomes 2 here
-	 * when we close fd, refcount becomes 1 and when we do
-	 * dmap_put_buf, ref count becomes 0 and memory will be freed.
-	 */
-	temp_dmabuf = dma_buf_get(*fd);
-	if (IS_ERR_OR_NULL(temp_dmabuf)) {
-		CAM_ERR(CAM_MEM, "dma_buf_get failed, *fd=%d", *fd);
-		rc = -EINVAL;
-		goto put_buf;
-	}
 
 	return rc;
 
