@@ -1274,6 +1274,16 @@ static int besbev_spkr_event(struct snd_soc_dapm_widget *w,
 					BESBEV_VBAT_ADC_FLT_CTL, 0x0E, 0x00);
 		snd_soc_component_update_bits(component, BESBEV_PA_FSM_CTL,
 						0x01, 0x00);
+
+		/* As part of usecase stop to disable the PA we update
+		 * BESBEV_PA_FSM_CTL to 0x00 which triggers the Global PA_EN to 0
+		 * It takes some time to completely disable the PA.
+		 * During this PA disabling time if we suddenly cut-off/disable the
+		 * speaker VDD it will result in POP sound.
+		 * Adding sleep for PA to get disabled and then disable supply.
+		 */
+		msleep(10);
+
 		/* PDM watchdog control disable*/
 		snd_soc_component_update_bits(component, BESBEV_PDM_WD_CTL,
 						0x01, 0x00);
