@@ -44,5 +44,6 @@ def define_monaco():
             "CONFIG_SND_SOC_WCD9XXX_V2",
             "CONFIG_SND_SOC_CC",
             "CONFIG_AUDIO_CC_IPC",
+            "CONFIG_DIGITAL_CDC_RSC_MGR",
         ],
     )

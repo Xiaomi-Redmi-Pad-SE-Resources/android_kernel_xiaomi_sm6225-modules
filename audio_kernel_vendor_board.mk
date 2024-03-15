@@ -19,12 +19,14 @@ ifeq ($(TARGET_USES_AUDIOLITE), true)
   AUDIO_DLKM_ENABLE := false
 endif
 
+BOARD_OPENSOURCE_DIR ?= vendor/qcom/opensource
+
 ifeq ($(AUDIO_DLKM_ENABLE), true)
   ifeq ($(call is-board-platform-in-list,taro kalama bengal monaco msmnile gen4), true)
-    include vendor/qcom/opensource/audio-kernel/audio_kernel_modules.mk
+    include $(BOARD_OPENSOURCE_DIR)/audio-kernel/audio_kernel_modules.mk
   endif
   ifeq ($(ENABLE_AUDIO_LEGACY_TECHPACK),true)
-    include vendor/qcom/opensource/audio-kernel/legacy/audio_kernel_modules.mk
+    include $(BOARD_OPENSOURCE_DIR)/audio-kernel/legacy/audio_kernel_modules.mk
   endif
   BOARD_VENDOR_KERNEL_MODULES += $(AUDIO_KERNEL_MODULES)
 endif
