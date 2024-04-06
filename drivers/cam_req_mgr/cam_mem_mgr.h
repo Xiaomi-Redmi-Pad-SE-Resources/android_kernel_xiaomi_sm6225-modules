@@ -47,9 +47,12 @@ enum cam_smmu_mapping_client {
  * @release_deferred: Buffer is deferred for release.
  * @is_imported:    Flag indicating if buffer is imported from an FD in user space
  * @krefcount:      Reference counter to track whether the buffer is
- *                  mapped and in use
+ *                  mapped and in use by kmd
  * @smmu_mapping_client: Client buffer (User or kernel)
->>>>>>> 575f20ea... msm: camera: mem_mgr: Add refcount to track in use buffers
+ * @urefcount:      Reference counter to track whether the buffer is
+ *                  mapped and in use by umd
+ * @ref_lock:       Mutex lock for refcount
+
  */
 struct cam_mem_buf_queue {
 	struct dma_buf *dma_buf;
@@ -68,6 +71,8 @@ struct cam_mem_buf_queue {
 	bool is_imported;
 	struct kref krefcount;
 	enum cam_smmu_mapping_client smmu_mapping_client;
+	struct kref urefcount;
+	struct mutex ref_lock;
 };
 
 /**
