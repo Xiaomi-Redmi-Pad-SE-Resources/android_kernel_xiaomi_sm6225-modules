@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
- * Copyright (c) 2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2023-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/kernel.h>
@@ -1051,6 +1051,145 @@ static void pll_db_commit_14nm(struct dsi_pll_14nm *pll,
 	wmb();  /* make sure register committed */
 }
 
+static int dsi_pll_read_stored_trim_codes(struct dsi_pll_resource *pll_res,
+						unsigned long vco_clk_rate)
+{
+	int i;
+	bool found = false;
+
+	if (!pll_res->dfps) {
+		pr_err("%s: Invalid dfps\n", __func__);
+		return -EINVAL;
+	}
+
+	for (i = 0; i < pll_res->dfps->vco_rate_cnt; i++) {
+		struct dfps_codes_info *codes_info =
+		&pll_res->dfps->codes_dfps[i];
+
+		DSI_PLL_DBG(pll_res, "valid=%d vco_rate=%d, code %x %x %x\n",
+			codes_info->is_valid, codes_info->clk_rate,
+			codes_info->pll_codes.pll_codes_1,
+			codes_info->pll_codes.pll_codes_2,
+			codes_info->pll_codes.pll_codes_3);
+
+		if (vco_clk_rate == codes_info->clk_rate &&
+				codes_info->is_valid) {
+			pll_res->cache_pll_trim_codes[0] =
+				codes_info->pll_codes.pll_codes_1;
+			pll_res->cache_pll_trim_codes[1] =
+				codes_info->pll_codes.pll_codes_2;
+			pll_res->cache_pll_trim_codes[2] =
+				codes_info->pll_codes.pll_codes_3;
+			found = true;
+			break;
+		}
+	}
+
+	if (!found)
+		return -EINVAL;
+
+	return 0;
+}
+
+
+static void pll_dynamic_refresh_14nm(struct dsi_pll_14nm *pll, struct dsi_pll_resource *rsc)
+{
+	struct dsi_pll_output *pout = &pll->out;
+	u32 data = 0;
+
+	data = (pout->pll_n1div | (pout->pll_n2div << 4));
+	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base,
+		DSI_DYNAMIC_REFRESH_PLL_CTRL19,
+		DSIPHY_CMN_CLK_CFG0, DSIPHY_CMN_CLK_CFG1,
+		data, 1);
+	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base,
+		DSI_DYNAMIC_REFRESH_PLL_CTRL20,
+		DSIPHY_CMN_CTRL_0, DSIPHY_PLL_SYSCLK_EN_RESET,
+		0xFF, 0x0);
+	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base,
+		DSI_DYNAMIC_REFRESH_PLL_CTRL21,
+		DSIPHY_PLL_DEC_START, DSIPHY_PLL_DIV_FRAC_START1,
+		pout->dec_start, (pout->div_frac_start & 0x0FF));
+	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base,
+		DSI_DYNAMIC_REFRESH_PLL_CTRL22,
+		DSIPHY_PLL_DIV_FRAC_START2, DSIPHY_PLL_DIV_FRAC_START3,
+		((pout->div_frac_start >> 8) & 0x0FF),
+		((pout->div_frac_start >> 16) & 0x0F));
+	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base,
+		DSI_DYNAMIC_REFRESH_PLL_CTRL23,
+		DSIPHY_PLL_PLLLOCK_CMP1, DSIPHY_PLL_PLLLOCK_CMP2,
+		(pout->plllock_cmp & 0x0FF),
+		((pout->plllock_cmp >> 8) & 0x0FF));
+	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base,
+		DSI_DYNAMIC_REFRESH_PLL_CTRL24,
+		DSIPHY_PLL_PLLLOCK_CMP3, DSIPHY_PLL_PLL_VCO_TUNE,
+		((pout->plllock_cmp >> 16) & 0x03),
+		(rsc->cache_pll_trim_codes[1] | BIT(7))); /* VCO tune*/
+	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base,
+		DSI_DYNAMIC_REFRESH_PLL_CTRL25,
+		DSIPHY_PLL_KVCO_CODE, DSIPHY_PLL_RESETSM_CNTRL,
+		(rsc->cache_pll_trim_codes[0] | BIT(5)), 0x38);
+		DSI_DYN_PLL_REG_W(rsc->dyn_pll_base,
+	DSI_DYNAMIC_REFRESH_PLL_CTRL26,
+		DSIPHY_PLL_PLL_LPF2_POSTDIV, DSIPHY_CMN_PLL_CNTRL,
+		(((pout->pll_postdiv - 1) << 4) | pll->in.pll_lpf_res1), 0x01);
+		DSI_DYN_PLL_REG_W(rsc->dyn_pll_base,
+		DSI_DYNAMIC_REFRESH_PLL_CTRL27,
+	DSIPHY_CMN_PLL_CNTRL, DSIPHY_CMN_PLL_CNTRL,
+		0x01, 0x01);
+	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base,
+		DSI_DYNAMIC_REFRESH_PLL_CTRL28,
+		DSIPHY_CMN_PLL_CNTRL, DSIPHY_CMN_PLL_CNTRL,
+		0x01, 0x01);
+	DSI_DYN_PLL_REG_W(rsc->dyn_pll_base,
+		DSI_DYNAMIC_REFRESH_PLL_CTRL29,
+		DSIPHY_CMN_PLL_CNTRL, DSIPHY_CMN_PLL_CNTRL,
+		0x01, 0x01);
+	DSI_PLL_REG_W(rsc->dyn_pll_base,
+		DSI_DYNAMIC_REFRESH_PLL_UPPER_ADDR, 0x0000001E);
+		DSI_PLL_REG_W(rsc->dyn_pll_base,
+	DSI_DYNAMIC_REFRESH_PLL_UPPER_ADDR2, 0x001FFE00);
+
+	/*
+	 * Ensure all the dynamic refresh registers are written before
+	 * dynamic refresh to change the fps is triggered
+	 */
+	wmb();
+}
+
+static int dsi_pll_14nm_dynamic_clk_vco_set_rate(struct dsi_pll_resource *pll_res)
+{
+	struct dsi_pll_14nm *pll;
+	u32 rate;
+	int rc = 0;
+
+	pll = pll_res->priv;
+	if (!pll) {
+		DSI_PLL_ERR(pll_res, "pll configuration not found\n");
+		return -EINVAL;
+	}
+	rate = pll_res->vco_rate;
+	rc = dsi_pll_read_stored_trim_codes(pll_res, rate);
+	if (rc) {
+		DSI_PLL_ERR(pll_res, "cannot find pll codes rate=%ld\n", rate);
+		return -EINVAL;
+	}
+
+	DSI_PLL_DBG(pll_res, "rate=%lu vco_ref_clk_rate=%lu\n",
+			pll_res->vco_rate, pll_res->vco_ref_clk_rate);
+
+	pll_res->vco_current_rate = pll_res->vco_rate;
+
+	dsi_pll_setup_config(pll_res->priv, pll_res);
+	dsi_pll_calc_dec_frac(pll, pll_res);
+
+	pll_14nm_calc_vco_count(pll, pll_res->vco_current_rate,
+			pll_res->vco_ref_clk_rate);
+
+	pll_dynamic_refresh_14nm(pll, pll_res);
+	return 0;
+}
+
 static int dsi_pll_14nm_vco_set_rate(struct dsi_pll_resource *pll_res)
 {
 	struct dsi_pll_14nm *pll;
@@ -1134,6 +1273,8 @@ int dsi_pll_14nm_configure(void *pll, bool commit)
 	if (commit) {
 		rc = dsi_pll_14nm_set_pclk_div(rsc, commit);
 		rc = dsi_pll_14nm_vco_set_rate(rsc);
+	} else {
+		rc = dsi_pll_14nm_dynamic_clk_vco_set_rate(rsc);
 	}
 
 	return 0;
