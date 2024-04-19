@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/clk.h>
@@ -585,6 +585,35 @@ static struct snd_soc_dai_link msm_rx_tx_cdc_dma_be_dai_links[] = {
 	},
 };
 
+
+static struct snd_soc_dai_link msm_rx_tx_cdc_dma_be_without_wsa_dai_links[] = {
+	/* No WSA CDC DMA Backend DAI Links */
+	{
+		.name = LPASS_BE_PRI_MI2S_RX,
+		.stream_name = LPASS_BE_PRI_MI2S_RX,
+		.playback_only = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			SND_SOC_DPCM_TRIGGER_POST},
+		.ignore_pmdown_time = 1,
+		.ignore_suspend = 1,
+		.ops = &sdx_mi2s_be_ops,
+		SND_SOC_DAILINK_REG(tavil_i2s_rx_without_wsa),
+		.init = &msm_aux_codec_init,
+	},
+	{
+		.name = LPASS_BE_PRI_MI2S_TX,
+		.stream_name = LPASS_BE_PRI_MI2S_TX,
+		.capture_only = 1,
+		.trigger = {SND_SOC_DPCM_TRIGGER_POST,
+			SND_SOC_DPCM_TRIGGER_POST},
+		.ignore_pmdown_time = 1,
+		.ignore_suspend = 1,
+		.ops = &sdx_mi2s_be_ops,
+		SND_SOC_DAILINK_REG(tavil_i2s_tx1),
+	},
+};
+
+
 static struct snd_soc_dai_link msm_tdm_dai_links[] = {
 	{
 		.name = LPASS_BE_PRI_TDM_RX_0,
@@ -609,11 +638,15 @@ static struct snd_soc_dai_link msm_tdm_dai_links[] = {
 	},
 };
 
+static struct snd_soc_dai_link msm_sdx_without_wsa_dai_links[
+			ARRAY_SIZE(msm_rx_tx_cdc_dma_be_without_wsa_dai_links)+
+			ARRAY_SIZE(msm_common_be_dai_links) +
+			ARRAY_SIZE(msm_tdm_dai_links)];
+
 static struct snd_soc_dai_link msm_sdx_dai_links[
 			ARRAY_SIZE(msm_rx_tx_cdc_dma_be_dai_links) +
 			ARRAY_SIZE(msm_common_be_dai_links) +
 			ARRAY_SIZE(msm_tdm_dai_links)];
-
 
 static int msm_populate_dai_link_component_of_node(
 					struct snd_soc_card *card)
@@ -711,6 +744,8 @@ static struct snd_soc_dai_link msm_stub_dai_links[
 static const struct of_device_id sdx_asoc_machine_of_match[]  = {
 	{ .compatible = "qcom,sdx-asoc-snd-tavil",
 	  .data = "codec"},
+	{ .compatible = "qcom,sdx-asoc-snd-tavil-without-wsa",
+	  .data = "without-wsa-codec"},
 	{},
 };
 
@@ -721,7 +756,6 @@ static int msm_snd_card_late_probe(struct snd_soc_card *card)
 	struct snd_soc_pcm_runtime *rtd;
 	int ret = 0;
 	void *mbhc_calibration;
-
 	rtd = snd_soc_get_pcm_runtime(card, &card->dai_link[0]);
 	if (!rtd) {
 		dev_err(card->dev,
@@ -761,14 +795,13 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 	int rc = 0;
 	u32 val = 0;
 	const struct of_device_id *match;
-
 	match = of_match_node(sdx_asoc_machine_of_match, dev->of_node);
 	if (!match) {
 		dev_err(dev, "%s: No DT match found for sound card\n",
 			__func__);
 		return NULL;
 	}
-
+    
 	if (!strcmp(match->data, "codec")) {
 		card = &snd_soc_card_sdx_msm;
 
@@ -777,7 +810,6 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 		       sizeof(msm_rx_tx_cdc_dma_be_dai_links));
 		total_links +=
 			ARRAY_SIZE(msm_rx_tx_cdc_dma_be_dai_links);
-
 		memcpy(msm_sdx_dai_links + total_links,
 		       msm_common_be_dai_links,
 		       sizeof(msm_common_be_dai_links));
@@ -793,7 +825,34 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 			total_links += ARRAY_SIZE(msm_tdm_dai_links);
 		}
 
+
 		dailink = msm_sdx_dai_links;
+	} else if (!strcmp(match->data, "without-wsa-codec")) {
+		card = &snd_soc_card_sdx_msm;
+
+		memcpy(msm_sdx_without_wsa_dai_links+ total_links,
+		       msm_rx_tx_cdc_dma_be_without_wsa_dai_links,
+		       sizeof(msm_rx_tx_cdc_dma_be_without_wsa_dai_links));
+		total_links +=
+			ARRAY_SIZE(msm_rx_tx_cdc_dma_be_without_wsa_dai_links);
+
+		memcpy(msm_sdx_without_wsa_dai_links + total_links,
+		       msm_common_be_dai_links,
+		       sizeof(msm_common_be_dai_links));
+		total_links +=
+			ARRAY_SIZE(msm_common_be_dai_links);
+
+		rc = of_property_read_u32(dev->of_node,
+				"qcom,tdm-audio-intf", &val);
+		if (!rc && val) {
+			memcpy(msm_sdx_without_wsa_dai_links + total_links,
+					msm_tdm_dai_links,
+					sizeof(msm_tdm_dai_links));
+			total_links += ARRAY_SIZE(msm_tdm_dai_links);
+		}
+
+
+		dailink = msm_sdx_without_wsa_dai_links;
 	} else if(!strcmp(match->data, "stub_codec")) {
 		card = &snd_soc_card_stub_msm;
 

@@ -17,6 +17,8 @@ endif
 
 ifeq ($(TARGET_USES_AUDIOLITE), true)
   AUDIO_DLKM_ENABLE := false
+  include vendor/qcom/opensource/audio-kernel/audio_audiolite_kernel_modules.mk
+  BOARD_VENDOR_KERNEL_MODULES += $(AUDIO_KERNEL_MODULES)
 endif
 
 BOARD_OPENSOURCE_DIR ?= vendor/qcom/opensource

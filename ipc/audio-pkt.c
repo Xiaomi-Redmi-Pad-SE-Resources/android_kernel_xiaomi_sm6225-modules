@@ -489,7 +489,7 @@ ssize_t audio_pkt_write(struct file *file, const char __user *buf,
 	struct audio_pkt_device *audpkt_dev = NULL;
 	struct gpr_hdr *audpkt_hdr = NULL;
 	void *kbuf;
-	int ret;
+	int ret = 0;
 #ifdef CONFIG_AUTO_AMS
 	dsp_ams_cmd_mem_map_t *mmap_pld = NULL;
 	dsp_ams_cmd_set_param_t *setp_pld = NULL;
