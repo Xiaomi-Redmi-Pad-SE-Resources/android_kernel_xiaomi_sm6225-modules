@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2017-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/uaccess.h>
@@ -2205,8 +2205,6 @@ static int cam_ope_mgr_process_cmd_buf_req(struct cam_ope_hw_mgr *hw_mgr,
 					ope_request->ope_kmd_buf.cpu_addr,
 					ope_request->ope_kmd_buf.iova_addr,
 					ope_request->ope_kmd_buf.iova_cdm_addr);
-					cam_mem_put_cpu_buf(cmd_buf->mem_handle);
-					break;
 				} else if (cmd_buf->cmd_buf_usage ==
 					OPE_CMD_BUF_DEBUG) {
 					ope_request->ope_debug_buf.cpu_addr =
@@ -2221,8 +2219,6 @@ static int cam_ope_mgr_process_cmd_buf_req(struct cam_ope_hw_mgr *hw_mgr,
 						cmd_buf->offset;
 					CAM_DBG(CAM_OPE, "dbg buf = %x",
 					ope_request->ope_debug_buf.cpu_addr);
-					cam_mem_put_cpu_buf(cmd_buf->mem_handle);
-					break;
 				}
 				cam_mem_put_cpu_buf(cmd_buf->mem_handle);
 				break;
@@ -4162,4 +4158,3 @@ ope_ctx_bitmap_failed:
 
 	return rc;
 }
-
