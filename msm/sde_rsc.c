@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  */
 
@@ -858,6 +858,12 @@ bool sde_rsc_client_is_state_update_complete(
 static int sde_rsc_hw_init(struct sde_rsc_priv *rsc)
 {
 	int ret;
+
+	ret = regulator_enable(rsc->fs);
+	if (ret) {
+		pr_err("sde rsc: fs on failed ret:%d\n", ret);
+		goto sde_rsc_fail;
+	}
 
 	rsc->sw_fs_enabled = true;
 
@@ -1832,12 +1838,6 @@ static int sde_rsc_probe(struct platform_device *pdev)
 		goto sde_rsc_fail;
 	}
 
-	ret = regulator_enable(rsc->fs);
-	if (ret) {
-		pr_err("sde rsc: fs on failed ret:%d\n", ret);
-		goto sde_rsc_fail;
-	}
-
 	ret = sde_rsc_hw_init(rsc);
 	if (ret) {
 		pr_err("sde rsc: hw init failed ret:%d\n", ret);
@@ -1875,6 +1875,14 @@ static int sde_rsc_pm_freeze_late(struct device *dev)
 {
 	struct platform_device *pdev = to_platform_device(dev);
 	struct sde_rsc_priv *rsc = platform_get_drvdata(pdev);
+	int rc;
+
+	if (!rsc->sw_fs_enabled) {
+		/* Incase fast mode is enabled, set to normal mode */
+		rc = regulator_set_mode(rsc->fs, REGULATOR_MODE_NORMAL);
+		if (rc)
+			pr_err("vdd reg normal mode set failed rc:%d\n", rc);
+	}
 
 	rsc->need_hwinit = true;
 
