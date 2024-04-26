@@ -1,5 +1,5 @@
 /* Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022, 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024, Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -830,7 +830,7 @@ static int msm_populate_dai_link_component_of_node(
 			index = of_property_match_string(cdev->of_node,
 						 "asoc-cpu-names",
 						 dai_link[i].cpus->dai_name);
-			pr_err("%s: retrieving cpu_of_node for %s\n",
+			pr_info("%s: retrieving cpu_of_node for %s\n",
 						__func__,
 						dai_link[i].cpus->dai_name);
 			if (index >= 0) {
