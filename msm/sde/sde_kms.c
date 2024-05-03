@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2014-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
@@ -3916,7 +3916,7 @@ static int sde_kms_trigger_null_flush(struct msm_kms *kms)
 	return rc;
 }
 
-#ifdef CONFIG_DEEPSLEEP
+#if IS_ENABLED(CONFIG_DEEPSLEEP) || IS_ENABLED(CONFIG_HIBERNATION)
 static int _sde_kms_pm_deepsleep_helper(struct sde_kms *sde_kms, bool enter)
 {
 	int i, rc = 0;
@@ -3927,6 +3927,7 @@ static int _sde_kms_pm_deepsleep_helper(struct sde_kms *sde_kms, bool enter)
 		return 0;
 	else {
 
+		/*Applicable for both deepsleep and hibernation*/
 		SDE_INFO("Deepsleep : enter %d\n", enter);
 
 		for (i = 0; i < sde_kms->dsi_display_count; i++) {
@@ -3935,10 +3936,10 @@ static int _sde_kms_pm_deepsleep_helper(struct sde_kms *sde_kms, bool enter)
 
 			if (enter) {
 
-				/*During deepsleep, clk_parent are reset at HW
-				 * but sw caching is retained in clk framework. To
-				 * maintain same state. unset parents and restore
-				 * during exit.
+				/* During deepsleep/hibernation, clk_parent are
+				 * reset at HW but sw caching is retained in clk
+				 * framework. To maintain same state. unset parents
+				 * and restore during exit.
 				 */
 
 				if(dsi_display->needs_clk_src_reset)

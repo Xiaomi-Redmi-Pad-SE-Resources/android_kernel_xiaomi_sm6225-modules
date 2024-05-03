@@ -441,7 +441,7 @@ static void dsi_display_change_te_irq_status(struct dsi_display *display,
 	}
 }
 
-static void dsi_display_register_te_irq(struct dsi_display *display)
+static int dsi_display_register_te_irq(struct dsi_display *display)
 {
 	int rc = 0;
 	struct platform_device *pdev;
@@ -451,18 +451,21 @@ static void dsi_display_register_te_irq(struct dsi_display *display)
 	pdev = display->pdev;
 	if (!pdev) {
 		DSI_ERR("invalid platform device\n");
-		return;
+		rc = -ENODEV;
+		goto error;
 	}
 
 	dev = &pdev->dev;
 	if (!dev) {
 		DSI_ERR("invalid device\n");
-		return;
+		rc = -ENODEV;
+		goto error;
 	}
 
 	if (display->trusted_vm_env) {
 		DSI_INFO("GPIO's are not enabled in trusted VM\n");
-		return;
+		rc = -ENODEV;
+		goto error;
 	}
 
 	if (!gpio_is_valid(display->disp_te_gpio)) {
@@ -488,13 +491,14 @@ static void dsi_display_register_te_irq(struct dsi_display *display)
 	disable_irq(te_irq);
 	display->is_te_irq_enabled = false;
 
-	return;
+	return rc;
 
 error:
 	/* disable the TE based ESD check */
 	DSI_WARN("Unable to register for TE IRQ\n");
 	if (display->panel->esd_config.status_mode == ESD_MODE_PANEL_TE)
 		display->panel->esd_config.esd_enabled = false;
+	return rc;
 }
 
 /* Allocate memory for cmd dma tx buffer */
@@ -907,8 +911,13 @@ static int dsi_display_status_check_te(struct dsi_display *display,
 	if (!rechecks)
 		return rc;
 
-	/* register te irq handler */
-	dsi_display_register_te_irq(display);
+	/* register te irq handler.
+	 * If we cannot register the irq handler, there is no point running
+	 * tests checking that it triggered, so bail.
+	 */
+	rc = dsi_display_register_te_irq(display);
+	if (rc)
+		goto out;
 
 	dsi_display_change_te_irq_status(display, true);
 
@@ -925,6 +934,7 @@ static int dsi_display_status_check_te(struct dsi_display *display,
 	dsi_display_change_te_irq_status(display, false);
 	dsi_display_release_te_irq(display);
 
+out:
 	return rc;
 }
 
