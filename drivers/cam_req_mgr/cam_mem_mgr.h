@@ -32,20 +32,6 @@ enum cam_smmu_mapping_client {
 /**
  * struct cam_mem_buf_queue
  *
- * @dma_buf:     pointer to the allocated dma_buf in the table
- * @q_lock:      mutex lock for buffer
- * @hdls:        list of mapped handles
- * @num_hdl:     number of handles
- * @fd:          file descriptor of buffer
- * @buf_handle:  unique handle for buffer
- * @align:       alignment for allocation
- * @len:         size of buffer
- * @flags:       attributes of buffer
- * @vaddr:       IOVA of buffer
- * @kmdvaddr:    Kernel virtual address
- * @active:      state of the buffer
- * @is_imported: Flag indicating if buffer is imported from an FD in user space
- * @is_internal: Flag indicating kernel allocated buffer
  * @dma_buf:        pointer to the allocated dma_buf in the table
  * @q_lock:         mutex lock for buffer
  * @hdls:           list of mapped handles
@@ -60,6 +46,7 @@ enum cam_smmu_mapping_client {
  * @active:         state of the buffer
  * @release_deferred: Buffer is deferred for release.
  * @is_imported:    Flag indicating if buffer is imported from an FD in user space
+ * @is_internal: Flag indicating kernel allocated buffer
  * @krefcount:      Reference counter to track whether the buffer is
  *                  mapped and in use by kmd
  * @smmu_mapping_client: Client buffer (User or kernel)

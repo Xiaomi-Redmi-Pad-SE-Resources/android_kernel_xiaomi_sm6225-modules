@@ -1053,7 +1053,6 @@ int cam_mem_mgr_map(struct cam_mem_mgr_map_cmd *cmd)
 		sizeof(int32_t) * cmd->num_hdl);
 	tbl.bufq[idx].is_imported = true;
 	tbl.bufq[idx].is_internal = is_internal;
-	kref_init(&tbl.bufq[idx].krefcount);
 	if (cmd->flags & CAM_MEM_FLAG_KMD_ACCESS)
 		kref_init(&tbl.bufq[idx].krefcount);
 	kref_init(&tbl.bufq[idx].urefcount);
@@ -1359,7 +1358,6 @@ void cam_mem_put_cpu_buf(int32_t buf_handle)
 		return;
 	}
 
-	if (kref_put(&tbl.bufq[idx].krefcount, cam_mem_util_unmap)) {
 	mutex_lock(&tbl.bufq[idx].ref_lock);
 	kref_put(&tbl.bufq[idx].krefcount, cam_mem_util_unmap_dummy);
 
@@ -1376,11 +1374,6 @@ void cam_mem_put_cpu_buf(int32_t buf_handle)
 			buf_handle, idx);
 	} else if (tbl.bufq[idx].release_deferred) {
 		CAM_ERR(CAM_MEM,
-			"idx %d fd %d size %llu active %d buf_handle %d refCount %d",
-			idx, tbl.bufq[idx].fd, tbl.bufq[idx].len,
-			tbl.bufq[idx].active, tbl.bufq[idx].buf_handle,
-			kref_read(&tbl.bufq[idx].krefcount));
-	}
 			"idx %d fd %d size %llu active %d buf_handle %d krefCount %d urefCount %d",
 			idx, tbl.bufq[idx].fd, tbl.bufq[idx].len,
 			tbl.bufq[idx].active, tbl.bufq[idx].buf_handle, krefcount, urefcount);
@@ -1435,19 +1428,6 @@ int cam_mem_mgr_release(struct cam_mem_mgr_release_cmd *cmd)
 	}
 
 	CAM_DBG(CAM_MEM, "Releasing hdl = %x, idx = %d", cmd->buf_handle, idx);
-	if (kref_put(&tbl.bufq[idx].krefcount, cam_mem_util_unmap)) {
-		CAM_DBG(CAM_MEM,
-			"Called unmap from here, buf_handle: %u, idx: %d",
-			cmd->buf_handle, idx);
-	} else {
-		rc = -EINVAL;
-		CAM_ERR(CAM_MEM,
-			"idx %d fd %d size %llu active %d buf_handle %d refCount %d",
-			idx, tbl.bufq[idx].fd, tbl.bufq[idx].len,
-			tbl.bufq[idx].active, tbl.bufq[idx].buf_handle,
-			kref_read(&tbl.bufq[idx].krefcount));
-		tbl.bufq[idx].release_deferred = true;
-	}
 
 	mutex_lock(&tbl.bufq[idx].ref_lock);
 	kref_put(&tbl.bufq[idx].urefcount, cam_mem_util_unmap_dummy);
