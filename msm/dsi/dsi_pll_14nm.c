@@ -1268,10 +1268,10 @@ int dsi_pll_14nm_configure(void *pll, bool commit)
 
 	pll_source_setup(rsc);
 
-	rc = dsi_pll_14nm_set_byteclk_div(rsc, commit);
+	dsi_pll_14nm_set_byteclk_div(rsc, commit);
+	dsi_pll_14nm_set_pclk_div(rsc, commit);
 
 	if (commit) {
-		rc = dsi_pll_14nm_set_pclk_div(rsc, commit);
 		rc = dsi_pll_14nm_vco_set_rate(rsc);
 	} else {
 		rc = dsi_pll_14nm_dynamic_clk_vco_set_rate(rsc);
