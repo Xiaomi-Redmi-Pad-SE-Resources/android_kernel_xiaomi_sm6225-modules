@@ -55,6 +55,9 @@ PRODUCT_PACKAGES += $(KERNEL_MODULES_OUT)/q6_notifier_dlkm.ko\
 	$(KERNEL_MODULES_OUT)/stub_dlkm.ko \
 	$(KERNEL_MODULES_OUT)/machine_dlkm.ko \
 	$(KERNEL_MODULES_OUT)/bolero_cdc_dlkm.ko \
+	$(KERNEL_MODULES_OUT)/rouleur_dlkm.ko \
+        $(KERNEL_MODULES_OUT)/rouleur_slave_dlkm.ko \
+        $(KERNEL_MODULES_OUT)/pm2250_spmi_dlkm.ko \
 	$(KERNEL_MODULES_OUT)/va_macro_dlkm.ko \
 	$(KERNEL_MODULES_OUT)/tx_macro_dlkm.ko \
 	$(KERNEL_MODULES_OUT)/rx_macro_dlkm.ko \

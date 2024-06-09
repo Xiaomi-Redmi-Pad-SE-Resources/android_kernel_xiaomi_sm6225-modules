@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* Copyright (c) 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024. Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _ROULEUR_INTERNAL_H
@@ -143,6 +144,7 @@ enum {
 	ROULEUR_IRQ_LO_OCP_INT,
 	ROULEUR_IRQ_HPHL_PDM_WD_INT,
 	ROULEUR_IRQ_HPHR_PDM_WD_INT,
+	ROULEUR_IRQ_AUX_PDM_WD_INT,
 	ROULEUR_IRQ_RESERVED_0,
 
 	/* INTR_CTRL_INT_MASK_2 */

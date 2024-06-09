@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024. Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -24,7 +25,7 @@
 #include "rouleur-registers.h"
 #include "pm2250-spmi.h"
 #include <asoc/msm-cdc-pinctrl.h>
-#include <dt-bindings/sound/audio-codec-port-types.h>
+#include <bindings/audio-codec-port-types.h>
 #include <asoc/msm-cdc-supply.h>
 #include <linux/power_supply.h>
 #include "asoc/bolero-slave-internal.h"
@@ -41,6 +42,18 @@
 #define LOW_SOC_MBIAS_REG_MIN_VOLTAGE 2850000
 
 #define FOUNDRY_ID_SEC 0x5
+
+#define ROULEUR_RATES (SNDRV_PCM_RATE_8000 | SNDRV_PCM_RATE_16000 |\
+                        SNDRV_PCM_RATE_32000 | SNDRV_PCM_RATE_48000 |\
+                        SNDRV_PCM_RATE_96000 | SNDRV_PCM_RATE_192000 |\
+                        SNDRV_PCM_RATE_384000)
+/* Fractional Rates */
+#define ROULEUR_FRAC_RATES (SNDRV_PCM_RATE_44100 | SNDRV_PCM_RATE_88200 |\
+                        SNDRV_PCM_RATE_176400 | SNDRV_PCM_RATE_352800)
+
+#define ROULEUR_FORMATS (SNDRV_PCM_FMTBIT_S16_LE |\
+                SNDRV_PCM_FMTBIT_S24_LE |\
+                SNDRV_PCM_FMTBIT_S24_3LE | SNDRV_PCM_FMTBIT_S32_LE)
 
 enum {
 	CODEC_TX = 0,
@@ -96,6 +109,31 @@ static struct regmap_irq_chip rouleur_regmap_irq_chip = {
 	.handle_post_irq = rouleur_handle_post_irq,
 	.irq_drv_data = NULL,
 };
+
+static struct snd_soc_dai_driver rouleur_dai[] = {
+        {
+                .name = "rouleur_cdc",
+                .playback = {
+                        .stream_name = "ROULEUR_AIF Playback",
+                        .rates = ROULEUR_RATES | ROULEUR_FRAC_RATES,
+                        .formats = ROULEUR_FORMATS,
+                        .rate_max = 384000,
+                        .rate_min = 8000,
+                        .channels_min = 1,
+                        .channels_max = 4,
+                },
+                .capture = {
+                        .stream_name = "ROULEUR_AIF Capture",
+                        .rates = ROULEUR_RATES,
+                        .formats = ROULEUR_FORMATS,
+                        .rate_max = 192000,
+                        .rate_min = 8000,
+                        .channels_min = 1,
+                        .channels_max = 4,
+                },
+        },
+};
+
 
 static int rouleur_handle_post_irq(void *data)
 {
@@ -162,6 +200,11 @@ static int rouleur_set_port_params(struct snd_soc_component *component,
 					__func__, slv_prt_type);
 	return -EINVAL;
 found:
+    if (i > num_ports || j == MAX_CH_PER_PORT) {
+		dev_err(component->dev, "%s Failed to find slave port for type %u\n",
+						__func__, slv_prt_type);
+		return -EINVAL;
+	}
 	*port_id = i;
 	*num_ch = (*map)[i][j].num_ch;
 	*ch_mask = (*map)[i][j].ch_mask;
@@ -240,6 +283,8 @@ static int rouleur_parse_port_mapping(struct device *dev,
 		old_port_num = port_num;
 	}
 	*num_ports = port_num;
+	kfree(dt_array);
+	return 0;
 
 err_pdata_fail:
 	kfree(dt_array);
@@ -1081,7 +1126,7 @@ static int rouleur_codec_enable_adc(struct snd_soc_dapm_widget *w,
 	switch (event) {
 	case SND_SOC_DAPM_PRE_PMU:
 		/* Enable BCS for Headset mic */
-		if (w->shift == 1 && !(snd_soc_component_read32(component,
+		if (w->shift == 1 && !(snd_soc_component_read(component,
 				ROULEUR_ANA_TX_AMIC2) & 0x10)) {
 			rouleur_tx_connect_port(component, MBHC, true);
 			set_bit(AMIC2_BCS_ENABLE, &rouleur->status_mask);
@@ -1158,12 +1203,12 @@ int rouleur_mbhc_micb_adjust_voltage(struct snd_soc_component *component,
 	micb_reg = ROULEUR_ANA_MICBIAS_MICB_1_2_EN;
 	switch (micb_num) {
 	case MIC_BIAS_1:
-		micb_val = snd_soc_component_read32(component, micb_reg);
+		micb_val = snd_soc_component_read(component, micb_reg);
 		micb_en = (micb_val & 0x40) >> 6;
 		pullup_mask = 0x20;
 		break;
 	case MIC_BIAS_2:
-		micb_val = snd_soc_component_read32(component, micb_reg);
+		micb_val = snd_soc_component_read(component, micb_reg);
 		micb_en = (micb_val & 0x04) >> 2;
 		pullup_mask = 0x02;
 		break;
@@ -1183,7 +1228,7 @@ int rouleur_mbhc_micb_adjust_voltage(struct snd_soc_component *component,
 	 * momentarily, change the micbias value and then re-enable
 	 * micbias.
 	 */
-	cur_vout_ctl = (snd_soc_component_read32(component,
+	cur_vout_ctl = (snd_soc_component_read(component,
 				ROULEUR_ANA_MICBIAS_LDO_1_SETTING)) & 0xF8;
 	cur_vout_ctl = cur_vout_ctl >> 3;
 	req_vout_ctl = rouleur_get_micb_vout_ctl_val(req_volt);
@@ -1403,7 +1448,7 @@ static bool get_usbc_hs_status(struct snd_soc_component *component,
 			       struct wcd_mbhc_config *mbhc_cfg)
 {
 	if (mbhc_cfg->enable_usbc_analog) {
-		if (!(snd_soc_component_read32(component, ROULEUR_ANA_MBHC_MECH)
+		if (!(snd_soc_component_read(component, ROULEUR_ANA_MBHC_MECH)
 			& 0x20))
 			return true;
 	}
@@ -1741,6 +1786,15 @@ static const struct snd_soc_dapm_widget rouleur_dapm_widgets[] = {
 	SND_SOC_DAPM_INPUT("AMIC3"),
 	SND_SOC_DAPM_INPUT("IN1_HPHL"),
 	SND_SOC_DAPM_INPUT("IN2_HPHR"),
+	SND_SOC_DAPM_INPUT("IN3_AUX"),
+
+	/*
+         * These dummy widgets are null connected to WCD937x dapm input and
+         * output widgets which are not actual path endpoints. This ensures
+         * dapm doesnt set these dapm input and output widgets as endpoints.
+         */
+        SND_SOC_DAPM_INPUT("WCD_TX_DUMMY"),
+        SND_SOC_DAPM_OUTPUT("WCD_RX_DUMMY"),
 
 	/*tx widgets*/
 	SND_SOC_DAPM_ADC_E("ADC1", NULL, SND_SOC_NOPM, 0, 0,
@@ -1764,18 +1818,22 @@ static const struct snd_soc_dapm_widget rouleur_dapm_widgets[] = {
 				SND_SOC_DAPM_POST_PMD),
 
 	/* micbias widgets*/
-	SND_SOC_DAPM_MICBIAS_E("MIC BIAS1", SND_SOC_NOPM, 0, 0,
+	SND_SOC_DAPM_SUPPLY("MIC BIAS1", SND_SOC_NOPM, 0, 0,
 				rouleur_codec_enable_micbias,
 				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
 				SND_SOC_DAPM_POST_PMD),
-	SND_SOC_DAPM_MICBIAS_E("MIC BIAS2", SND_SOC_NOPM, 0, 0,
+	SND_SOC_DAPM_SUPPLY("MIC BIAS2", SND_SOC_NOPM, 0, 0,
 				rouleur_codec_enable_micbias,
 				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
 				SND_SOC_DAPM_POST_PMD),
-	SND_SOC_DAPM_MICBIAS_E("MIC BIAS3", SND_SOC_NOPM, 0, 0,
+	SND_SOC_DAPM_SUPPLY("MIC BIAS3", SND_SOC_NOPM, 0, 0,
 				rouleur_codec_enable_micbias,
 				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
 				SND_SOC_DAPM_POST_PMD),
+
+	/*SND_SOC_DAPM_SUPPLY("VDD_BUCK", SND_SOC_NOPM, 0, 0,
+                             wcd937x_codec_enable_vdd_buck,
+                             SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMD),*/
 
 	SND_SOC_DAPM_SUPPLY("PA_VPOS", SND_SOC_NOPM, 0, 0,
 			     rouleur_codec_enable_pa_vpos,
@@ -1786,6 +1844,11 @@ static const struct snd_soc_dapm_widget rouleur_dapm_widgets[] = {
 				rouleur_codec_enable_ear_pa,
 				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
 				SND_SOC_DAPM_PRE_PMD | SND_SOC_DAPM_POST_PMD),
+	/*SND_SOC_DAPM_PGA_E("AUX PGA", WCD937X_AUX_AUXPA, 7, 0, NULL, 0,
+                                rouleur_codec_enable_aux_pa,
+                                SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
+                                SND_SOC_DAPM_PRE_PMD | SND_SOC_DAPM_POST_PMD),*/
+
 	SND_SOC_DAPM_PGA_E("LO PGA", ROULEUR_ANA_COMBOPA_CTL, 7, 0, NULL, 0,
 				rouleur_codec_enable_lo_pa,
 				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
@@ -1834,23 +1897,25 @@ static const struct snd_soc_dapm_widget rouleur_dapm_widgets[] = {
 
 	SND_SOC_DAPM_OUTPUT("ADC1_OUTPUT"),
 	SND_SOC_DAPM_OUTPUT("ADC2_OUTPUT"),
+	SND_SOC_DAPM_OUTPUT("WCD_TX_OUTPUT"),
 
 	/*output widgets rx*/
 	SND_SOC_DAPM_OUTPUT("EAR"),
 	SND_SOC_DAPM_OUTPUT("LO"),
+	SND_SOC_DAPM_OUTPUT("AUX"),
 	SND_SOC_DAPM_OUTPUT("HPHL"),
 	SND_SOC_DAPM_OUTPUT("HPHR"),
 
 	/* micbias pull up widgets*/
-	SND_SOC_DAPM_MICBIAS_E("VA MIC BIAS1", SND_SOC_NOPM, 0, 0,
+	SND_SOC_DAPM_SUPPLY("VA MIC BIAS1", SND_SOC_NOPM, 0, 0,
 				rouleur_codec_enable_micbias_pullup,
 				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
 				SND_SOC_DAPM_POST_PMD),
-	SND_SOC_DAPM_MICBIAS_E("VA MIC BIAS2", SND_SOC_NOPM, 0, 0,
+	SND_SOC_DAPM_SUPPLY("VA MIC BIAS2", SND_SOC_NOPM, 0, 0,
 				rouleur_codec_enable_micbias_pullup,
 				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
 				SND_SOC_DAPM_POST_PMD),
-	SND_SOC_DAPM_MICBIAS_E("VA MIC BIAS3", SND_SOC_NOPM, 0, 0,
+	SND_SOC_DAPM_SUPPLY("VA MIC BIAS3", SND_SOC_NOPM, 0, 0,
 				rouleur_codec_enable_micbias_pullup,
 				SND_SOC_DAPM_PRE_PMU | SND_SOC_DAPM_POST_PMU |
 				SND_SOC_DAPM_POST_PMD),
@@ -1878,16 +1943,21 @@ static const struct snd_soc_dapm_widget rouleur_dapm_widgets[] = {
 };
 
 static const struct snd_soc_dapm_route rouleur_audio_map[] = {
+	{"WCD_TX_DUMMY", NULL, "WCD_TX_OUTPUT"},
+	{"WCD_TX_OUTPUT", NULL, "ADC1_MIXER"},
 	{"ADC1_OUTPUT", NULL, "ADC1_MIXER"},
 	{"ADC1_MIXER", "Switch", "ADC1"},
 	{"ADC1", NULL, "AMIC1"},
 
+	{"WCD_TX_OUTPUT", NULL, "ADC2_MIXER"},
 	{"ADC2_OUTPUT", NULL, "ADC2_MIXER"},
 	{"ADC2_MIXER", "Switch", "ADC2"},
 	{"ADC2", NULL, "ADC2 MUX"},
 	{"ADC2 MUX", "INP3", "AMIC3"},
 	{"ADC2 MUX", "INP2", "AMIC2"},
 
+	{"IN1_HPHL", NULL, "WCD_RX_DUMMY"},
+	//{"IN1_HPHL", NULL, "VDD_BUCK"},
 	{"IN1_HPHL", NULL, "PA_VPOS"},
 	{"RX1", NULL, "IN1_HPHL"},
 	{"RDAC1", NULL, "RX1"},
@@ -1895,6 +1965,8 @@ static const struct snd_soc_dapm_route rouleur_audio_map[] = {
 	{"HPHL PGA", NULL, "HPHL_RDAC"},
 	{"HPHL", NULL, "HPHL PGA"},
 
+	{"IN2_HPHR", NULL, "WCD_RX_DUMMY"},
+	//{"IN2_HPHR", NULL, "VDD_BUCK"},
 	{"IN2_HPHR", NULL, "PA_VPOS"},
 	{"RX2", NULL, "IN2_HPHR"},
 	{"RDAC2", NULL, "RX2"},
@@ -1902,10 +1974,16 @@ static const struct snd_soc_dapm_route rouleur_audio_map[] = {
 	{"HPHR PGA", NULL, "HPHR_RDAC"},
 	{"HPHR", NULL, "HPHR PGA"},
 
+	{"IN3_AUX", NULL, "WCD_RX_DUMMY"},
+        //{"IN3_AUX", NULL, "VDD_BUCK"},
+        //{"IN3_AUX", NULL, "CLS_H_PORT"},
+	//{"RX3", NULL, "IN3_AUX"},
 	{"RDAC3", NULL, "RX1"},
 	{"EAR_RDAC", "Switch", "RDAC3"},
 	{"EAR PGA", NULL, "EAR_RDAC"},
 	{"EAR", NULL, "EAR PGA"},
+	//{"AUX PGA", NULL, "AUX_RDAC"},
+	//{"AUX", NULL, "AUX PGA"},
 
 	{"RDAC3", NULL, "RX1"},
 	{"LO_RDAC", "Switch", "RDAC3"},
@@ -1977,13 +2055,21 @@ int rouleur_info_create_codec_entry(struct snd_info_entry *codec_root,
 		return 0;
 	}
 	card = component->card;
-	priv->entry = snd_info_create_subdir(codec_root->module,
-					     "rouleur", codec_root);
+	priv->entry = snd_info_create_module_entry(codec_root->module,
+                                             "rouleur", codec_root);
+
 	if (!priv->entry) {
 		dev_dbg(component->dev, "%s: failed to create rouleur entry\n",
 			__func__);
 		return -ENOMEM;
 	}
+	priv->entry->mode = S_IFDIR | 0555;
+        if (snd_info_register(priv->entry) < 0) {
+                snd_info_free_entry(priv->entry);
+		pr_err("%s snd_info_register priv->entry faild \n",__func__);
+                return -ENOMEM;
+        }
+
 	version_entry = snd_info_create_card_entry(card->snd_card,
 						   "version",
 						   priv->entry);
@@ -2195,12 +2281,18 @@ static int rouleur_soc_codec_probe(struct snd_soc_component *component)
 	snd_soc_dapm_ignore_suspend(dapm, "AMIC3");
 	snd_soc_dapm_ignore_suspend(dapm, "IN1_HPHL");
 	snd_soc_dapm_ignore_suspend(dapm, "IN2_HPHR");
+	snd_soc_dapm_ignore_suspend(dapm, "IN3_AUX");
 	snd_soc_dapm_ignore_suspend(dapm, "ADC1_OUTPUT");
 	snd_soc_dapm_ignore_suspend(dapm, "ADC2_OUTPUT");
+	snd_soc_dapm_ignore_suspend(dapm, "WCD_TX_OUTPUT");
 	snd_soc_dapm_ignore_suspend(dapm, "EAR");
 	snd_soc_dapm_ignore_suspend(dapm, "LO");
+	snd_soc_dapm_ignore_suspend(dapm, "AUX");
 	snd_soc_dapm_ignore_suspend(dapm, "HPHL");
 	snd_soc_dapm_ignore_suspend(dapm, "HPHR");
+	snd_soc_dapm_ignore_suspend(dapm, "WCD_TX_DUMMY");
+        snd_soc_dapm_ignore_suspend(dapm, "WCD_RX_DUMMY");
+
 	snd_soc_dapm_ignore_suspend(dapm, "DMIC1_OUTPUT");
 	snd_soc_dapm_ignore_suspend(dapm, "DMIC2_OUTPUT");
 	snd_soc_dapm_sync(dapm);
@@ -2682,7 +2774,7 @@ static int rouleur_bind(struct device *dev)
 	wcd_disable_irq(&rouleur->irq_info, ROULEUR_IRQ_HPHL_PDM_WD_INT);
 
 	ret = snd_soc_register_component(dev, &soc_codec_dev_rouleur,
-				     NULL, 0);
+                                     rouleur_dai, ARRAY_SIZE(rouleur_dai));
 	if (ret) {
 		dev_err(dev, "%s: Codec registration failed\n",
 				__func__);

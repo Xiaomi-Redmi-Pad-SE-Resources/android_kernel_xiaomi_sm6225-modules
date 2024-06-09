@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024. Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/module.h>
@@ -282,12 +283,53 @@ static int rouleur_slave_bind(struct device *dev,
 {
 	int ret = 0;
 	uint8_t devnum = 0;
+	struct rouleur_slave_priv *rouleur_slave = NULL;
 	struct swr_device *pdev = to_swr_device(dev);
 
 	if (pdev == NULL) {
 		dev_err(dev, "%s: pdev is NULL\n", __func__);
 		return -EINVAL;
 	}
+	rouleur_slave = devm_kzalloc(&pdev->dev,
+				sizeof(struct rouleur_slave_priv), GFP_KERNEL);
+	if (!rouleur_slave) {
+		pr_err("%s No MEM \n",__func__);
+		return -ENOMEM;
+	}
+
+	dev_err(dev, "%s: pdev  %s \n", __func__, pdev->name);
+	swr_set_dev_data(pdev, rouleur_slave);
+	rouleur_slave->swr_slave = pdev;
+
+#ifdef CONFIG_DEBUG_FS
+	if (!rouleur_slave->debugfs_rouleur_dent) {
+		rouleur_slave->debugfs_rouleur_dent = debugfs_create_dir(
+						dev_name(&pdev->dev), 0);
+		if (!IS_ERR(rouleur_slave->debugfs_rouleur_dent)) {
+			rouleur_slave->debugfs_peek =
+					debugfs_create_file("swrslave_peek",
+					S_IFREG | 0444,
+					rouleur_slave->debugfs_rouleur_dent,
+					(void *) pdev,
+					&codec_debug_read_ops);
+
+			rouleur_slave->debugfs_poke =
+					debugfs_create_file("swrslave_poke",
+					S_IFREG | 0444,
+					rouleur_slave->debugfs_rouleur_dent,
+					(void *) pdev,
+					&codec_debug_write_ops);
+
+			rouleur_slave->debugfs_reg_dump =
+					debugfs_create_file(
+					"swrslave_reg_dump",
+					S_IFREG | 0444,
+					rouleur_slave->debugfs_rouleur_dent,
+					(void *) pdev,
+					&codec_debug_dump_ops);
+                }
+        }
+#endif
 
 	ret = swr_get_logical_dev_num(pdev, pdev->addr, &devnum);
 	if (ret) {
@@ -355,45 +397,6 @@ static int rouleur_swr_reset(struct swr_device *pdev)
 
 static int rouleur_swr_probe(struct swr_device *pdev)
 {
-	struct rouleur_slave_priv *rouleur_slave = NULL;
-
-	rouleur_slave = devm_kzalloc(&pdev->dev,
-				sizeof(struct rouleur_slave_priv), GFP_KERNEL);
-	if (!rouleur_slave)
-		return -ENOMEM;
-
-	swr_set_dev_data(pdev, rouleur_slave);
-
-	rouleur_slave->swr_slave = pdev;
-#ifdef CONFIG_DEBUG_FS
-	if (!rouleur_slave->debugfs_rouleur_dent) {
-		rouleur_slave->debugfs_rouleur_dent = debugfs_create_dir(
-						dev_name(&pdev->dev), 0);
-		if (!IS_ERR(rouleur_slave->debugfs_rouleur_dent)) {
-			rouleur_slave->debugfs_peek =
-					debugfs_create_file("swrslave_peek",
-					S_IFREG | 0444,
-					rouleur_slave->debugfs_rouleur_dent,
-					(void *) pdev,
-					&codec_debug_read_ops);
-
-			rouleur_slave->debugfs_poke =
-					debugfs_create_file("swrslave_poke",
-					S_IFREG | 0444,
-					rouleur_slave->debugfs_rouleur_dent,
-					(void *) pdev,
-					&codec_debug_write_ops);
-
-			rouleur_slave->debugfs_reg_dump =
-					debugfs_create_file(
-					"swrslave_reg_dump",
-					S_IFREG | 0444,
-					rouleur_slave->debugfs_rouleur_dent,
-					(void *) pdev,
-					&codec_debug_dump_ops);
-                }
-        }
-#endif
 	return component_add(&pdev->dev, &rouleur_slave_comp_ops);
 }
 

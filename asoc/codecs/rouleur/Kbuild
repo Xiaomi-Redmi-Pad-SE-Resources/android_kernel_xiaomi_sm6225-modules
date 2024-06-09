@@ -21,6 +21,11 @@ ifeq ($(KERNEL_BUILD), 0)
 		export
 		INCS    +=  -include $(AUDIO_ROOT)/config/bengalautoconf.h
 	endif
+	ifeq ($(CONFIG_ARCH_SCUBA), y)
+		include $(AUDIO_ROOT)/config/bengalauto.conf
+		export
+		INCS    +=  -include $(AUDIO_ROOT)/config/bengalautoconf.h
+	endif
 endif
 
 # As per target team, build is done as follows:
@@ -40,7 +45,7 @@ endif
 # config.
 
 ############ UAPI ############
-UAPI_DIR :=	uapi
+UAPI_DIR :=	uapi/audio
 UAPI_INC :=	-I$(AUDIO_ROOT)/include/$(UAPI_DIR)
 
 ############ COMMON ############

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <sound/soc.h>
@@ -96,66 +96,85 @@ SND_SOC_DAILINK_DEFS(quat_auxpcm_tx,
 SND_SOC_DAILINK_DEFS(rx_dma_rx0,
 	DAILINK_COMP_ARRAY(COMP_CPU("snd-soc-dummy-dai")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("bolero-codec", "rx_macro_rx1"),
+			   COMP_CODEC("soc:spf_core_platform:bolero-codec","rx_macro_rx1"),
 			   COMP_CODEC("wcd937x_codec", "wcd937x_cdc"),
+			   COMP_CODEC("rouleur-codec", "rouleur_cdc"),
 			   COMP_CODEC("wsa-codec0", "wsa_rx0")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("snd-soc-dummy")));
 
 SND_SOC_DAILINK_DEFS(rx_dma_rx1,
 	DAILINK_COMP_ARRAY(COMP_CPU("snd-soc-dummy-dai")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("bolero-codec", "rx_macro_rx2"),
+			   COMP_CODEC("soc:spf_core_platform:bolero-codec","rx_macro_rx2"),
 			   COMP_CODEC("wcd937x_codec", "wcd937x_cdc"),
+			   COMP_CODEC("rouleur-codec", "rouleur_cdc"),
 			   COMP_CODEC("wsa-codec0", "wsa_rx0")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("snd-soc-dummy")));
 
 SND_SOC_DAILINK_DEFS(rx_dma_rx2,
 	DAILINK_COMP_ARRAY(COMP_CPU("snd-soc-dummy-dai")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("bolero-codec", "rx_macro_rx3"),
-			   COMP_CODEC("wcd937x_codec", "wcd937x_cdc")),
+			   COMP_CODEC("soc:spf_core_platform:bolero-codec","rx_macro_rx3"),
+			   COMP_CODEC("wcd937x_codec", "wcd937x_cdc"),
+			   COMP_CODEC("rouleur-codec", "rouleur_cdc")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("snd-soc-dummy")));
 
 SND_SOC_DAILINK_DEFS(rx_dma_rx3,
 	DAILINK_COMP_ARRAY(COMP_CPU("snd-soc-dummy-dai")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("bolero-codec", "rx_macro_rx4"),
-			   COMP_CODEC("wcd937x_codec", "wcd937x_cdc")),
+			   COMP_CODEC("soc:spf_core_platform:bolero-codec","rx_macro_rx4"),
+			   COMP_CODEC("wcd937x_codec", "wcd937x_cdc"),
+			   COMP_CODEC("rouleur-codec", "rouleur_cdc")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("snd-soc-dummy")));
 
 SND_SOC_DAILINK_DEFS(rx_dma_rx5,
 	DAILINK_COMP_ARRAY(COMP_CPU("snd-soc-dummy-dai")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("bolero-codec", "rx_macro_rx5"),
-			   COMP_CODEC("wcd937x_codec", "wcd937x_cdc")),
+			   COMP_CODEC("soc:spf_core_platform:bolero-codec","rx_macro_rx5"),
+			   COMP_CODEC("wcd937x_codec", "wcd937x_cdc"),
+			   COMP_CODEC("rouleur-codec", "rouleur_cdc")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("snd-soc-dummy")));
 
 SND_SOC_DAILINK_DEFS(rx_dma_rx6,
 	DAILINK_COMP_ARRAY(COMP_CPU("snd-soc-dummy-dai")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("bolero-codec", "rx_macro_rx6"),
-			   COMP_CODEC("wcd937x_codec", "wcd937x_cdc")),
+			   COMP_CODEC("soc:spf_core_platform:bolero-codec","rx_macro_rx6"),
+			   COMP_CODEC("wcd937x_codec", "wcd937x_cdc"),
+			   COMP_CODEC("rouleur-codec", "rouleur_cdc")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("snd-soc-dummy")));
 
 SND_SOC_DAILINK_DEFS(tx_dma_tx3,
 	DAILINK_COMP_ARRAY(COMP_CPU("snd-soc-dummy-dai")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("bolero-codec", "tx_macro_tx1"),
-			   COMP_CODEC("wcd937x_codec", "wcd937x_cdc")),
+			   COMP_CODEC("soc:spf_core_platform:bolero-codec","tx_macro_tx1"),
+			   COMP_CODEC("wcd937x_codec", "wcd937x_cdc"),
+			   COMP_CODEC("rouleur-codec", "rouleur_cdc")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("snd-soc-dummy")));
 
 SND_SOC_DAILINK_DEFS(tx_dma_tx4,
 	DAILINK_COMP_ARRAY(COMP_CPU("snd-soc-dummy-dai")),
 	DAILINK_COMP_ARRAY(COMP_CODEC("bolero-codec", "tx_macro_tx2"),
-			   COMP_CODEC("wcd937x_codec", "wcd937x_cdc")),
+			   COMP_CODEC("soc:spf_core_platform:bolero-codec","tx_macro_tx2"),
+			   COMP_CODEC("wcd937x_codec", "wcd937x_cdc"),
+			   COMP_CODEC("rouleur-codec", "rouleur_cdc")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("snd-soc-dummy")));
 
 SND_SOC_DAILINK_DEFS(va_dma_tx0,
 	DAILINK_COMP_ARRAY(COMP_CPU("snd-soc-dummy-dai")),
-	DAILINK_COMP_ARRAY(COMP_CODEC("bolero-codec", "va_macro_tx1")),
+	DAILINK_COMP_ARRAY(COMP_CODEC("bolero-codec", "va_macro_tx1"),
+			   COMP_CODEC("soc:spf_core_platform:bolero-codec","va_macro_tx1")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("snd-soc-dummy")));
 
 SND_SOC_DAILINK_DEFS(va_dma_tx1,
 	DAILINK_COMP_ARRAY(COMP_CPU("snd-soc-dummy-dai")),
-	DAILINK_COMP_ARRAY(COMP_CODEC("bolero-codec", "va_macro_tx2")),
+	DAILINK_COMP_ARRAY(COMP_CODEC("bolero-codec", "va_macro_tx2"),
+			   COMP_CODEC("soc:spf_core_platform:bolero-codec","va_macro_tx2")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("snd-soc-dummy")));
 
 SND_SOC_DAILINK_DEFS(va_dma_tx2,
 	DAILINK_COMP_ARRAY(COMP_CPU("snd-soc-dummy-dai")),
-	DAILINK_COMP_ARRAY(COMP_CODEC("bolero-codec", "va_macro_tx3")),
+	DAILINK_COMP_ARRAY(COMP_CODEC("bolero-codec", "va_macro_tx3"),
+			   COMP_CODEC("soc:spf_core_platform:bolero-codec","va_macro_tx3")),
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("snd-soc-dummy")));
 
 SND_SOC_DAILINK_DEFS(proxy_tx,
