@@ -2512,6 +2512,14 @@ static int __cam_isp_ctx_dump_in_top_state(
 	struct cam_hw_dump_args             dump_args;
 	struct cam_isp_context_dump_header *hdr;
 
+	rc  = cam_mem_get_cpu_buf(dump_info->buf_handle,
+		&cpu_addr, &buf_len);
+	if (rc) {
+		CAM_ERR(CAM_ISP, "Invalid handle %u rc %d, ctx_idx: %u, link: 0x%x",
+			dump_info->buf_handle, rc, ctx->ctx_id, ctx->link_hdl);
+		return rc;
+	}
+
 	spin_lock_bh(&ctx->lock);
 	list_for_each_entry_safe(req, req_temp,
 		&ctx->active_req_list, list) {
@@ -2530,16 +2538,10 @@ static int __cam_isp_ctx_dump_in_top_state(
 		}
 	}
 	spin_unlock_bh(&ctx->lock);
-	return rc;
+	cam_mem_put_cpu_buf(dump_info->buf_handle);
+	return 0;
+
 hw_dump:
-	rc  = cam_mem_get_cpu_buf(dump_info->buf_handle,
-		&cpu_addr, &buf_len);
-	if (rc) {
-		CAM_ERR(CAM_ISP, "Invalid handle %u rc %d",
-			dump_info->buf_handle, rc);
-		spin_unlock_bh(&ctx->lock);
-		return rc;
-	}
 	if (buf_len <= dump_info->offset) {
 		spin_unlock_bh(&ctx->lock);
 		CAM_WARN(CAM_ISP, "Dump buffer overshoot len %zu offset %zu",
