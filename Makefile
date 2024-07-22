@@ -8,7 +8,7 @@ KBUILD_OPTIONS += CONFIG_SND_SOC_AUTO=y
 KBUILD_OPTIONS += CONFIG_SND_SOC_GVM=y
 endif
 
-ifeq ($(TARGET_SUPPORT), $(filter $(TARGET_SUPPORT), sdxpinn sdxpinn-cpe-wkk sdxbaagha))
+ifeq ($(TARGET_SUPPORT), $(filter $(TARGET_SUPPORT), sdxpinn sdxpinn-cpe-wkk sdxbaagha sdxpinn-cpe-wkk-v1))
 
 AUDIO_ROOT=$(KERNEL_SRC)/$(M)
 UAPI_OUT=$(KERNEL_SRC)/$(M)
@@ -27,6 +27,10 @@ KBUILD_OPTIONS += CONFIG_ARCH_SDXPINN=y
 endif
 
 ifeq ($(TARGET_SUPPORT), sdxpinn-cpe-wkk)
+KBUILD_OPTIONS += CONFIG_ARCH_SDXPINN=y
+endif
+
+ifeq ($(TARGET_SUPPORT), sdxpinn-cpe-wkk-v1)
 KBUILD_OPTIONS += CONFIG_ARCH_SDXPINN=y
 endif
 
