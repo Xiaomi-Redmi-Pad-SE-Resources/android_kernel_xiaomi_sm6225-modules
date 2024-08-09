@@ -507,6 +507,7 @@ struct cnss_thermal_cdev {
 
 struct cnss_plat_data {
 	struct platform_device *plat_dev;
+	enum cnss_driver_mode driver_mode;
 	void *bus_priv;
 	enum cnss_dev_bus_type bus_type;
 	struct list_head vreg_list;
@@ -648,6 +649,7 @@ struct cnss_plat_data {
 	bool no_bwscale;
 	bool sleep_clk;
 	struct wlchip_serial_id_v01 serial_id;
+	bool ipa_shared_cb_enable;
 };
 
 #if IS_ENABLED(CONFIG_ARCH_QCOM)
