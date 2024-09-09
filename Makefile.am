@@ -130,5 +130,8 @@ ifeq ($(QTI_TECHPACK), true)
 endif
 
 clean:
-	rm -f *.o *.ko *.mod.c *.mod.o *~ .*.cmd Module.symvers
+	@find . -type f \( -name "*.o" -o -name "*.ko" -o -name "*.mod" \
+	-o -name "*.mod.c" -o -name "*.mod.o" -o -name ".*.cmd" \
+	-o -name "Module.symvers" -o -name ".*.d" -o -name "modules.order" \) \
+	-delete
 	rm -rf .tmp_versions
