@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /*
  * Copyright (c) 2018-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #ifndef _BENGAL_PORT_CONFIG
@@ -62,8 +62,8 @@ static struct swr_mstr_port_map sm_port_map[] = {
 };
 
 static struct swr_mstr_port_map sm_port_map_rouleur[] = {
-	{VA_MACRO, SWR_UC0, tx_frame_params_default},
 	{RX_MACRO, SWR_UC0, rx_frame_params_rouleur},
 	{RX_MACRO, SWR_UC1, rx_frame_params_dsd},
+	{RX_MACRO, SWR_UC2, rx_frame_params_44p1KHz},
 };
 #endif /* _BENGAL_PORT_CONFIG */
