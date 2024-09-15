@@ -2547,6 +2547,103 @@ static int cnss_pci_store_qrtr_node_id(struct cnss_pci_data *pci_priv)
 }
 #endif
 
+#ifdef CONFIG_ONE_MSI_VECTOR
+/**
+ * All the user share the same vector and msi data
+ * For MHI user, we need pass IRQ array information to MHI component
+ * MHI_IRQ_NUMBER is defined to specify this MHI IRQ array size
+ */
+#define MHI_IRQ_NUMBER 3
+static struct cnss_msi_config msi_config_one_msi = {
+	.total_vectors = 1,
+	.total_users = 4,
+	.users = (struct cnss_msi_user[]) {
+		{ .name = "MHI", .num_vectors = 1, .base_vector = 0 },
+		{ .name = "CE", .num_vectors = 1, .base_vector = 0 },
+		{ .name = "WAKE", .num_vectors = 1, .base_vector = 0 },
+		{ .name = "DP", .num_vectors = 1, .base_vector = 0 },
+	},
+};
+
+static int cnss_pci_get_one_msi_assignment(struct cnss_pci_data *pci_priv)
+{
+	pci_priv->msi_config = &msi_config_one_msi;
+
+	return 0;
+}
+
+static bool cnss_pci_fallback_one_msi(struct cnss_pci_data *pci_priv,
+				      int *num_vectors)
+{
+	struct pci_dev *pci_dev = pci_priv->pci_dev;
+	struct cnss_msi_config *msi_config;
+
+	cnss_pci_get_one_msi_assignment(pci_priv);
+	msi_config = pci_priv->msi_config;
+	if (!msi_config) {
+		cnss_pr_err("one msi_config is NULL!\n");
+		return false;
+	}
+	*num_vectors = pci_alloc_irq_vectors(pci_dev,
+					     msi_config->total_vectors,
+					     msi_config->total_vectors,
+					     PCI_IRQ_MSI);
+	if (*num_vectors < 0) {
+		cnss_pr_err("Failed to get one MSI vector!\n");
+		return false;
+	}
+	cnss_pr_dbg("request MSI one vector\n");
+
+	return true;
+}
+
+static bool cnss_pci_is_one_msi(struct cnss_pci_data *pci_priv)
+{
+	return pci_priv && pci_priv->msi_config &&
+	       (pci_priv->msi_config->total_vectors == 1);
+}
+
+static int cnss_pci_get_one_msi_mhi_irq_array_size(
+		struct cnss_pci_data *pci_priv)
+{
+	return MHI_IRQ_NUMBER;
+}
+
+static bool cnss_pci_is_force_one_msi(struct cnss_pci_data *pci_priv)
+{
+	struct cnss_plat_data *plat_priv = pci_priv->plat_priv;
+
+	return test_bit(FORCE_ONE_MSI, &plat_priv->ctrl_params.quirks);
+}
+#else
+static int cnss_pci_get_one_msi_assignment(struct cnss_pci_data *pci_priv)
+{
+	return 0;
+}
+
+static bool cnss_pci_fallback_one_msi(struct cnss_pci_data *pci_priv,
+			       int *num_vectors)
+{
+	return false;
+}
+
+static bool cnss_pci_is_one_msi(struct cnss_pci_data *pci_priv)
+{
+	return false;
+}
+
+static int cnss_pci_get_one_msi_mhi_irq_array_size(
+		struct cnss_pci_data *pci_priv)
+{
+	return 0;
+}
+
+static bool cnss_pci_is_force_one_msi(struct cnss_pci_data *pci_priv)
+{
+	return false;
+}
+#endif
+
 int cnss_pci_start_mhi(struct cnss_pci_data *pci_priv)
 {
 	int ret = 0;
@@ -6905,6 +7002,12 @@ static int cnss_mhi_bw_scale(struct mhi_controller *mhi_ctrl,
 	struct cnss_plat_data *plat_priv = pci_priv->plat_priv;
 	int ret = 0;
 
+	if (plat_priv->pcie_switch_type == PCIE_SWITCH_NTN3) {
+		ret = cnss_pci_dsp_link_retrain(pci_priv,
+						link_info->target_link_speed);
+		return ret;
+	}
+
 	cnss_pr_dbg("Setting link speed:0x%x, width:0x%x\n",
 		    link_info->target_link_speed,
 		    link_info->target_link_width);
@@ -7376,6 +7479,23 @@ static int cnss_try_suspend(struct cnss_plat_data *plat_priv)
 	return 0;
 }
 #endif
+
+void cnss_pci_of_switch_type_init(struct cnss_plat_data *plat_priv)
+{
+	struct device *dev = &plat_priv->plat_dev->dev;
+	int ret;
+
+	if (dev && dev->of_node) {
+		ret = of_property_read_u32(dev->of_node,
+					   "qcom,pcie-switch-type",
+					   &plat_priv->pcie_switch_type);
+		if (ret)
+			plat_priv->pcie_switch_type = 0;
+	} else {
+		cnss_pr_err("device or node is not available.");
+	}
+	cnss_pr_dbg("pcie_switch_type is %d", plat_priv->pcie_switch_type);
+}
 
 /* Setting to use this cnss_pm_domain ops will let PM framework override the
  * ops from dev->bus->pm which is pci_dev_pm_ops from pci-driver.c. This ops
