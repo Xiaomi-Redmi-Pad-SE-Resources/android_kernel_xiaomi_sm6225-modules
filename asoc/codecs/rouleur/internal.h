@@ -9,6 +9,7 @@
 #include <asoc/wcd-clsh.h>
 #include <asoc/wcd-mbhc-v2.h>
 #include <asoc/wcd-irq.h>
+#include <soc/soundwire.h>
 #include "rouleur-mbhc.h"
 
 #define ROULEUR_MAX_MICBIAS 3
@@ -18,6 +19,7 @@
 #define MAX_PORT 8
 #define MAX_CH_PER_PORT 8
 
+#define SWR_NUM_PORTS  4
 extern struct regmap_config rouleur_regmap_config;
 
 struct codec_port_info {
@@ -66,6 +68,8 @@ struct rouleur_priv {
 			tx_port_mapping[MAX_PORT][MAX_CH_PER_PORT];
 	struct codec_port_info
 			rx_port_mapping[MAX_PORT][MAX_CH_PER_PORT];
+	struct swr_port_params tx_port_params[SWR_UC_MAX][SWR_NUM_PORTS];
+	struct swr_dev_frame_config swr_tx_port_params[SWR_UC_MAX];
 	struct regulator_bulk_data *supplies;
 	struct notifier_block nblock;
 	/* wcd callback to bolero */
