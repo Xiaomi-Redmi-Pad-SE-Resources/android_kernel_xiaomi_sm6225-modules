@@ -103,6 +103,14 @@
 #define DSIPHY_PLL_RESETSM_CNTRL		0x042c
 #define DSIPHY_PLL_PLL_LPF2_POSTDIV		0x0504
 
+#if defined (CONFIG_ARCH_SCUBA)
+struct dsi_pll_div_table pll_14nm_dphy[] = {
+	{162500000, 325000000, 8, 0},
+	{325000000, 650000000, 3, 0},
+	{650000000, 1300000000, 2, 0},
+	{1300000000, 2600000000, 1, 0}
+};
+#else
 struct dsi_pll_div_table pll_14nm_dphy[] = {
 	{162500000, 325000000, 8, 0},
 	{325000000, 650000000, 4, 0},
@@ -110,4 +118,5 @@ struct dsi_pll_div_table pll_14nm_dphy[] = {
 	{1300000000, 2600000000, 1, 0}
 };
 
+#endif
 #endif  /* DSI_PLL_14NM_H */
