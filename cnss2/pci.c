@@ -1653,6 +1653,26 @@ out:
 	return ret;
 }
 
+#define PCIE_SWITCH_CONFIG_SPACE_ACCESS_TIMEOUT 2000
+#define PCIE_SWITCH_CONFIG_SPACE_ACCESS_DELAY 20
+static int cnss_pci_set_power_state(struct cnss_pci_data *pci_priv,
+				    pci_power_t state)
+{
+	int timeout = PCIE_SWITCH_CONFIG_SPACE_ACCESS_TIMEOUT;
+	int ret;
+
+	do {
+		ret = pci_set_power_state(pci_priv->pci_dev, state);
+		if (ret == 0)
+			break;
+
+		msleep(PCIE_SWITCH_CONFIG_SPACE_ACCESS_DELAY);
+		timeout -= PCIE_SWITCH_CONFIG_SPACE_ACCESS_DELAY;
+	} while (timeout > 0);
+
+	return ret;
+}
+
 int cnss_resume_pci_link(struct cnss_pci_data *pci_priv)
 {
 	int ret = 0;
@@ -1676,7 +1696,7 @@ int cnss_resume_pci_link(struct cnss_pci_data *pci_priv)
 	pci_priv->pci_link_state = PCI_LINK_UP;
 
 	if (pci_priv->pci_dev->device != QCA6174_DEVICE_ID) {
-		ret = pci_set_power_state(pci_priv->pci_dev, PCI_D0);
+		ret = cnss_pci_set_power_state(pci_priv, PCI_D0);
 		if (ret) {
 			cnss_pr_err("Failed to set D0, err = %d\n", ret);
 			goto out;
@@ -2140,6 +2160,23 @@ static int cnss_pci_check_mhi_state_bit(struct cnss_pci_data *pci_priv,
 		CNSS_ASSERT(0);
 
 	return -EINVAL;
+}
+
+static int cnss_pci_is_rddm_state(struct cnss_plat_data *plat_priv)
+{
+	struct cnss_pci_data *pci_priv;
+
+	if (!plat_priv || !plat_priv->bus_priv)
+		return 0;
+
+	if (plat_priv->bus_type != CNSS_BUS_PCI)
+		return 0;
+
+	pci_priv = (struct cnss_pci_data *)plat_priv->bus_priv;
+	if (pci_priv->device_id == QCA6174_DEVICE_ID)
+		return 0;
+
+	return test_bit(CNSS_MHI_TRIGGER_RDDM, &pci_priv->mhi_state);
 }
 
 static int cnss_rddm_trigger_debug(struct cnss_pci_data *pci_priv)
@@ -3980,7 +4017,8 @@ void cnss_wlan_unregister_driver(struct cnss_wlan_driver *driver_ops)
 
 skip_wait_power_up:
 	if (!test_bit(CNSS_DRIVER_RECOVERY, &plat_priv->driver_state) &&
-	    !test_bit(CNSS_DEV_ERR_NOTIFY, &plat_priv->driver_state))
+	    !test_bit(CNSS_DEV_ERR_NOTIFY, &plat_priv->driver_state) &&
+	    !cnss_pci_is_rddm_state(plat_priv))
 		goto skip_wait_recovery;
 
 	reinit_completion(&plat_priv->recovery_complete);
@@ -4345,6 +4383,14 @@ static int cnss_pci_runtime_suspend(struct device *dev)
 	plat_priv = pci_priv->plat_priv;
 	if (!plat_priv)
 		return -EAGAIN;
+
+	/* RuntimePM is not fully supported yet on PCIe switch platform.
+	 * Disable runtimePM for now.
+	 */
+	if (plat_priv->pcie_switch_type == PCIE_SWITCH_NTN3) {
+		cnss_pr_dbg("PCIe switch platform, reject RTPM\n");
+		return -EAGAIN;
+	}
 
 	if (!cnss_is_device_powered_on(pci_priv->plat_priv))
 		return -EAGAIN;
@@ -7255,9 +7301,6 @@ static int cnss_pci_register_mhi(struct cnss_pci_data *pci_priv)
 	if (cnss_pci_get_drv_supported(pci_priv))
 		cnss_mhi_controller_set_base(pci_priv, bar_start);
 
-	cnss_get_bwscal_info(plat_priv);
-	cnss_pr_dbg("no_bwscale: %d\n", plat_priv->no_bwscale);
-
 	/* BW scale CB needs to be set after registering MHI per requirement */
 	if (!plat_priv->no_bwscale)
 		cnss_mhi_controller_set_bw_scale_cb(pci_priv,
@@ -7607,8 +7650,11 @@ cnss_pci_restore_rc_speed(struct cnss_pci_data *pci_priv)
 		/* do nothing, keep Gen1*/
 		return;
 	case QCA6490_DEVICE_ID:
-		/* restore to Gen2 */
-		link_speed = PCI_EXP_LNKSTA_CLS_5_0GB;
+		if (plat_priv->no_bwscale)
+			link_speed = 0;
+		else
+			/* restore to Gen2 */
+			link_speed = PCI_EXP_LNKSTA_CLS_5_0GB;
 		break;
 	default:
 		/* The request 0 will reset maximum GEN speed to default */
@@ -7713,13 +7759,15 @@ static int cnss_pci_probe(struct pci_dev *pci_dev,
 	if (plat_priv->use_pm_domain)
 		dev->pm_domain = &cnss_pm_domain;
 
-	cnss_pci_restore_rc_speed(pci_priv);
-
 	ret = cnss_pci_get_dev_cfg_node(plat_priv);
 	if (ret) {
 		cnss_pr_err("Failed to get device cfg node, err = %d\n", ret);
 		goto reset_ctx;
 	}
+
+	cnss_get_bwscal_info(plat_priv);
+	cnss_pr_dbg("no_bwscale: %d\n", plat_priv->no_bwscale);
+	cnss_pci_restore_rc_speed(pci_priv);
 
 	cnss_get_sleep_clk_supported(plat_priv);
 
