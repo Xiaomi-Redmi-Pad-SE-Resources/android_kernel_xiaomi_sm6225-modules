@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2016-2020, The Linux Foundation. All rights reserved.
- * Copyright (c) 2022. Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022, 2024. Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/clk.h>
@@ -48,9 +48,11 @@
 #define MSM_DAILINK_NAME(name) (__CHIPSET__#name)
 
 #define WCD9XXX_MBHC_DEF_RLOADS     5
+#define ROULEUR_MBHC_DEF_BUTTONS    5
 #define WCD9XXX_MBHC_DEF_BUTTONS    8
 #define DEV_NAME_STR_LEN            32
 #define WCD_MBHC_HS_V_MAX           1600
+#define ROULEUR_MBHC_HS_V_MAX       1700
 
 #define WCN_CDC_SLIM_RX_CH_MAX 2
 #define WCN_CDC_SLIM_TX_CH_MAX 3
@@ -90,6 +92,7 @@ static int dmic_0_1_gpio_cnt;
 static int dmic_2_3_gpio_cnt;
 
 static void *def_wcd_mbhc_cal(void);
+static void *def_rouleur_mbhc_cal(void);
 
 /*
  * Need to report LINEIN
@@ -318,6 +321,34 @@ static void *def_wcd_mbhc_cal(void)
 	btn_high[5] = 500;
 	btn_high[6] = 500;
 	btn_high[7] = 500;
+
+	return wcd_mbhc_cal;
+}
+
+static void *def_rouleur_mbhc_cal(void)
+{
+	void *wcd_mbhc_cal;
+	struct wcd_mbhc_btn_detect_cfg *btn_cfg;
+	u16 *btn_high;
+
+	wcd_mbhc_cal = kzalloc(WCD_MBHC_CAL_SIZE(ROULEUR_MBHC_DEF_BUTTONS,
+			WCD9XXX_MBHC_DEF_RLOADS), GFP_KERNEL);
+	if (!wcd_mbhc_cal)
+		return NULL;
+
+	WCD_MBHC_CAL_PLUG_TYPE_PTR(wcd_mbhc_cal)->v_hs_max =
+					ROULEUR_MBHC_HS_V_MAX;
+	WCD_MBHC_CAL_BTN_DET_PTR(wcd_mbhc_cal)->num_btn =
+					ROULEUR_MBHC_DEF_BUTTONS;
+	btn_cfg = WCD_MBHC_CAL_BTN_DET_PTR(wcd_mbhc_cal);
+	btn_high = ((void *)&btn_cfg->_v_btn_low) +
+			(sizeof(btn_cfg->_v_btn_low[0]) * btn_cfg->num_btn);
+
+	btn_high[0] = 75;
+	btn_high[1] = 150;
+	btn_high[2] = 237;
+	btn_high[3] = 500;
+	btn_high[4] = 500;
 
 	return wcd_mbhc_cal;
 }
@@ -1121,7 +1152,7 @@ static struct snd_soc_card *populate_snd_card_dailinks(struct device *dev)
 			}
 		}
 		dailink = msm_bengal_dai_links;
-	} 
+	}
 
 	else if (!strcmp(match->data, "stub_codec")) {
 		card = &snd_soc_card_stub_msm;
@@ -1200,6 +1231,9 @@ static int msm_rx_tx_codec_init(struct snd_soc_pcm_runtime *rtd)
 
 	component = snd_soc_rtdcom_lookup(rtd, WCD937X_DRV_NAME);
 	if (!component)
+		component = snd_soc_rtdcom_lookup(rtd, "rouleur_codec");
+
+	if (!component)
 		component = snd_soc_rtdcom_lookup(rtd, DRV_NAME);
 
 	if (!component) {
@@ -1232,6 +1266,12 @@ static int msm_rx_tx_codec_init(struct snd_soc_pcm_runtime *rtd)
 			ARRAY_SIZE(sm_port_map),
 			sm_port_map);
 	}
+	if (!strncmp(component->driver->name, "rouleur_codec", 13)) {
+		rouleur_info_create_codec_entry(pdata->codec_root, component);
+		bolero_set_port_map(bolero_component,
+			ARRAY_SIZE(sm_port_map_rouleur),
+			sm_port_map_rouleur);
+	}
 
 	snd_soc_dapm_ignore_suspend(dapm, "EAR");
 	snd_soc_dapm_ignore_suspend(dapm, "AUX");
@@ -1253,6 +1293,15 @@ mbhc_cfg_cal:
 			return -ENOMEM;
 		wcd_mbhc_cfg.calibration = mbhc_calibration;
 		ret = wcd937x_mbhc_hs_detect(component, &wcd_mbhc_cfg);
+	}
+	if (!strncmp(component->driver->name, "rouleur_codec", 13)) {
+		pr_debug("%s rouleur_codec mbhc_calibration \n" ,__func__);
+		mbhc_calibration = def_rouleur_mbhc_cal();
+		if (!mbhc_calibration)
+			return -ENOMEM;
+		wcd_mbhc_cfg.calibration = mbhc_calibration;
+		ret = 0;
+		ret = rouleur_mbhc_hs_detect(component, &wcd_mbhc_cfg);
 	}
 
 	if (ret) {

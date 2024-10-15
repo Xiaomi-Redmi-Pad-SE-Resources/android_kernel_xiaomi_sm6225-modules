@@ -568,6 +568,40 @@ include $(DLKM_DIR)/Build_external_kernelmodule.mk
 endif
 
 ########################### CC ################################
+ifeq ($(call is-board-platform-in-list, bengal),true)
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
+LOCAL_MODULE              := rouleur_dlkm.ko
+LOCAL_MODULE_KBUILD_NAME  := asoc/codecs/rouleur/rouleur_dlkm.ko
+LOCAL_MODULE_TAGS         := optional
+LOCAL_MODULE_DEBUG_ENABLE := true
+LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
+include $(DLKM_DIR)/Build_external_kernelmodule.mk
+endif
+
+########################### CC ################################
+ifeq ($(call is-board-platform-in-list, bengal),true)
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
+LOCAL_MODULE              := rouleur_slave_dlkm.ko
+LOCAL_MODULE_KBUILD_NAME  := asoc/codecs/rouleur/rouleur_slave_dlkm.ko
+LOCAL_MODULE_TAGS         := optional
+LOCAL_MODULE_DEBUG_ENABLE := true
+LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
+include $(DLKM_DIR)/Build_external_kernelmodule.mk
+endif
+########################### CC ################################
+ifeq ($(call is-board-platform-in-list, bengal),true)
+include $(CLEAR_VARS)
+LOCAL_SRC_FILES           := $(AUDIO_SRC_FILES)
+LOCAL_MODULE              := pm2250_spmi_dlkm.ko
+LOCAL_MODULE_KBUILD_NAME  := asoc/codecs/rouleur/pm2250_spmi_dlkm.ko
+LOCAL_MODULE_TAGS         := optional
+LOCAL_MODULE_DEBUG_ENABLE := true
+LOCAL_MODULE_PATH         := $(KERNEL_MODULES_OUT)
+include $(DLKM_DIR)/Build_external_kernelmodule.mk
+endif
+########################## BOLERO #################################
 ifeq ($(call is-board-platform-in-list, monaco),true)
 ifeq ($(TARGET_SUPPORTS_WEAR_AON),true)
 include $(CLEAR_VARS)
