@@ -3923,42 +3923,41 @@ static int _sde_kms_pm_deepsleep_helper(struct sde_kms *sde_kms, bool enter)
 	void *display;
 	struct dsi_display *dsi_display;
 
-	if (!pm_suspend_via_firmware())
+	if (!pm_suspend_via_firmware() && !sde_kms->hibernate_phase)
 		return 0;
-	else {
 
-		/*Applicable for both deepsleep and hibernation*/
-		SDE_INFO("Deepsleep : enter %d\n", enter);
+	/*Applicable for both deepsleep and hibernation*/
+	SDE_INFO("Sleepstate(%d)\n", enter);
 
-		for (i = 0; i < sde_kms->dsi_display_count; i++) {
-			display = sde_kms->dsi_displays[i];
-			dsi_display = (struct dsi_display *)display;
+	for (i = 0; i < sde_kms->dsi_display_count; i++) {
+		display = sde_kms->dsi_displays[i];
+		dsi_display = (struct dsi_display *)display;
 
-			if (enter) {
+		if (enter) {
 
-				/* During deepsleep/hibernation, clk_parent are
-				 * reset at HW but sw caching is retained in clk
-				 * framework. To maintain same state. unset parents
-				 * and restore during exit.
-				 */
+			/* During deepsleep/hibernation, clk_parent are
+			 * reset at HW but sw caching is retained in clk
+			 * framework. To maintain same state. unset parents
+			 * and restore during exit.
+			 */
 
-				if(dsi_display->needs_clk_src_reset)
-					rc = dsi_display_set_clk_src(dsi_display, true);
+			if (dsi_display->needs_clk_src_reset)
+				rc = dsi_display_set_clk_src(dsi_display, true);
 
-				/* DSI ctrl regulator can be disabled, even in static
-				 * screen, during deepsleep.
-				 */
-				if (dsi_display->needs_ctrl_vreg_disable)
-					(void)dsi_display_ctrl_vreg_off(dsi_display);
-			} else {
-				if (dsi_display->needs_ctrl_vreg_disable)
-					(void)dsi_display_ctrl_vreg_on(dsi_display);
+			/* DSI ctrl regulator can be disabled, even in static
+			 * screen, during deepsleep.
+			 */
+			if (dsi_display->needs_ctrl_vreg_disable)
+				(void)dsi_display_ctrl_vreg_off(dsi_display);
+		} else {
+			if (dsi_display->needs_ctrl_vreg_disable)
+				(void)dsi_display_ctrl_vreg_on(dsi_display);
 
-				if (dsi_display->needs_clk_src_reset)
-					(void)dsi_display_set_clk_src(dsi_display, false);
-			}
+			if (dsi_display->needs_clk_src_reset)
+				(void)dsi_display_set_clk_src(dsi_display, false);
 		}
 	}
+
 	return rc;
 }
 #else
