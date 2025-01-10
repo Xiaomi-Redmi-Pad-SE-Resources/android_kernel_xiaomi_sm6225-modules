@@ -460,6 +460,10 @@ static void rouleur_mbhc_get_result_params(struct rouleur_priv *rouleur,
 		__func__, *zdet);
 	/* Start discharge */
 	regmap_update_bits(rouleur->regmap, ROULEUR_ANA_MBHC_ZDET, 0x20, 0x00);
+	/* Discharge operation takes time for the HPH PA to ramp down to 0V.
+	 * Add finite amunt of delay to complete ramp down.
+	 */
+	usleep_range(40000, 40010);
 }
 
 static void rouleur_mbhc_zdet_start(struct snd_soc_component *component,
