@@ -268,6 +268,7 @@ int cam_packet_util_process_patches(struct cam_packet *packet,
 		if ((size_t)patch_desc[i].src_offset >= src_buf_size) {
 			CAM_ERR(CAM_UTIL,
 				"Invalid src buf patch offset");
+			cam_mem_put_cpu_buf((int32_t)patch_desc[i].dst_buf_hdl);
 			return -EINVAL;
 		}
 

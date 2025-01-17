@@ -3617,8 +3617,10 @@ static int __cam_isp_ctx_config_dev_in_top_state(
 		&packet_addr, &len);
 	if (rc != 0) {
 		CAM_ERR(CAM_ISP, "Can not get packet address");
-		rc = -EINVAL;
-		goto free_req;
+		spin_lock_bh(&ctx->lock);
+		list_add_tail(&req->list, &ctx->free_req_list);
+		spin_unlock_bh(&ctx->lock);
+		return -EINVAL;
 	}
 
 	remain_len = len;

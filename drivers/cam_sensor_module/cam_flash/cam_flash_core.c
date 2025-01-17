@@ -1569,6 +1569,8 @@ int cam_flash_pmic_pkt_parser(struct cam_flash_ctrl *fctrl, void *arg)
 		cmd_buf = (uint32_t *)((uint8_t *)cmd_buf_ptr +
 			cmd_desc->offset);
 		if (!cmd_buf) {
+			cam_mem_put_cpu_buf(cmd_desc->mem_handle);
+			cam_mem_put_cpu_buf(config.packet_handle);
 			rc = -EINVAL;
 			return rc;
 		}
@@ -1584,6 +1586,8 @@ int cam_flash_pmic_pkt_parser(struct cam_flash_ctrl *fctrl, void *arg)
 				CAM_WARN(CAM_FLASH,
 					"Rxed Flash fire ops without linking");
 				flash_data->cmn_attr.is_settings_valid = false;
+				cam_mem_put_cpu_buf(cmd_desc->mem_handle);
+				cam_mem_put_cpu_buf(config.packet_handle);
 				return -EINVAL;
 			}
 			if (remain_len < sizeof(struct cam_flash_set_on_off)) {
