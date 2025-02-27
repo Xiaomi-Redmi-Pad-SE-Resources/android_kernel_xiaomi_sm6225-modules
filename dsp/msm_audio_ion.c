@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (c) 2013-2021, The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2023, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2023, 2025 Qualcomm Innovation Center, Inc. All rights reserved.
  */
 
 #include <linux/init.h>
@@ -906,6 +906,7 @@ static long msm_audio_ion_ioctl(struct file *file, unsigned int ioctl_num,
 		ret = msm_audio_ion_free(mem_handle, ion_data);
 		if (ret < 0) {
 			pr_err("%s Ion free failed %d\n", __func__, ret);
+			mutex_unlock(&(msm_audio_ion_fd_list.list_mutex));
 			return ret;
 		}
 		msm_audio_delete_fd_entry(mem_handle);

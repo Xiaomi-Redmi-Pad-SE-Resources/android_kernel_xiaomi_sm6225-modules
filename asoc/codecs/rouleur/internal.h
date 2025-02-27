@@ -11,6 +11,7 @@
 #include <asoc/wcd-irq.h>
 #include <soc/soundwire.h>
 #include "rouleur-mbhc.h"
+#include "rouleur.h"
 
 #define ROULEUR_MAX_MICBIAS 3
 
@@ -54,6 +55,7 @@ struct rouleur_priv {
 	bool comp1_enable;
 	bool comp2_enable;
 	bool dapm_bias_off;
+	bool bcs_dis;
 
 	struct irq_domain *virq;
 	struct wcd_irq_info irq_info;
@@ -95,6 +97,7 @@ struct rouleur_priv {
 	bool low_soc;
 	int foundry_id_reg;
 	int foundry_id;
+	u8 tx_master_ch_map[ROULEUR_MAX_SLAVE_CH_TYPES];
 };
 
 struct rouleur_micbias_setting {
