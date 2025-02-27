@@ -2239,6 +2239,8 @@ static const char *cnss_recovery_reason_to_str(enum cnss_recovery_reason reason)
 		return "RDDM";
 	case CNSS_REASON_TIMEOUT:
 		return "TIMEOUT";
+	case CNSS_REASON_FW_ASSERTION_FAIL:
+		return "FW_ASSERTION_FAIL";
 	}
 
 	return "UNKNOWN";

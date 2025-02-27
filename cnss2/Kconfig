@@ -179,3 +179,10 @@ config CNSS2_ENUM_WITH_LOW_SPEED
 	help
 	  Set link target speed to Gen1 before enum, and then restore default
 	  RC speed to re-establish link speed. For Genoa chip, needn't restore.
+
+config MHI_BUF_LEN
+	int "Mhi buffer size"
+	default "32768"
+	depends on CNSS2
+	help
+	  If configured, CNSS platform driver set mhi buffer size with external value.

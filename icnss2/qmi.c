@@ -46,7 +46,14 @@
 #define BIN_BDF_FILE_NAME_PREFIX	"bdwlan."
 #define REGDB_FILE_NAME			"regdb.bin"
 
-#define QDSS_TRACE_CONFIG_FILE "qdss_trace_config.cfg"
+#define HW_V1_NUMBER			"v1"
+#ifdef CONFIG_ICNSS2_DEBUG
+#define QDSS_FILE_BUILD_STR		"debug_"
+#else
+#define QDSS_FILE_BUILD_STR		"perf_"
+#endif
+
+#define QDSS_TRACE_CONFIG_FILE "qdss_trace_config"
 
 #define WLAN_BOARD_ID_INDEX		0x100
 #define DEVICE_BAR_SIZE			0x200000
@@ -1359,6 +1366,22 @@ end:
 	return ret;
 }
 
+static void icnss_get_qdss_cfg_filename(struct icnss_priv *priv,
+					char *filename, u32 filename_len)
+{
+	char filename_tmp[ICNSS_MAX_FILE_NAME];
+	char *build_str = QDSS_FILE_BUILD_STR;
+
+	if (priv->device_id == WCN6450_DEVICE_ID)
+		snprintf(filename_tmp, filename_len, QDSS_TRACE_CONFIG_FILE
+			"_%s%s.cfg", build_str, HW_V1_NUMBER);
+	else
+		snprintf(filename_tmp, filename_len, QDSS_TRACE_CONFIG_FILE
+			".cfg");
+
+	icnss_add_fw_prefix_name(priv, filename, filename_tmp);
+}
+
 int icnss_wlfw_qdss_dnld_send_sync(struct icnss_priv *priv)
 {
 	struct wlfw_qdss_trace_config_download_req_msg_v01 *req;
@@ -1383,9 +1406,11 @@ int icnss_wlfw_qdss_dnld_send_sync(struct icnss_priv *priv)
 		return -ENOMEM;
 	}
 
-	icnss_add_fw_prefix_name(priv, filename, QDSS_TRACE_CONFIG_FILE);
+	icnss_get_qdss_cfg_filename(priv, filename, sizeof(filename));
+
 	ret = firmware_request_nowarn(&fw_entry, filename,
 				      &priv->pdev->dev);
+
 	if (ret) {
 		icnss_pr_err("Failed to load QDSS: %s ret:%d\n",
 			     filename, ret);
@@ -2652,6 +2677,10 @@ static void wlfw_qdss_trace_save_ind_cb(struct qmi_handle *qmi,
 	if (!event_data)
 		return;
 
+	event_data->mem_type = ind_msg->mem_seg[0].type;
+	event_data->total_size = ind_msg->total_size;
+	event_data->mem_seg_len = ind_msg->mem_seg_len;
+
 	if (ind_msg->mem_seg_valid) {
 		if (ind_msg->mem_seg_len > QDSS_TRACE_SEG_LEN_MAX) {
 			icnss_pr_err("Invalid seg len %u\n",
@@ -2660,17 +2689,18 @@ static void wlfw_qdss_trace_save_ind_cb(struct qmi_handle *qmi,
 		}
 		icnss_pr_dbg("QDSS_trace_save seg len %u\n",
 			     ind_msg->mem_seg_len);
-		event_data->mem_seg_len = ind_msg->mem_seg_len;
 		for (i = 0; i < ind_msg->mem_seg_len; i++) {
 			event_data->mem_seg[i].addr = ind_msg->mem_seg[i].addr;
 			event_data->mem_seg[i].size = ind_msg->mem_seg[i].size;
+			if (event_data->mem_type != ind_msg->mem_seg[i].type) {
+				icnss_pr_err("FW Mem file save ind cannot have multiple mem types\n");
+				goto free_event_data;
+			}
 			icnss_pr_dbg("seg-%d: addr 0x%llx size 0x%x\n",
 				     i, ind_msg->mem_seg[i].addr,
 				     ind_msg->mem_seg[i].size);
 		}
 	}
-
-	event_data->total_size = ind_msg->total_size;
 
 	if (ind_msg->file_name_valid)
 		strlcpy(event_data->file_name, ind_msg->file_name,
