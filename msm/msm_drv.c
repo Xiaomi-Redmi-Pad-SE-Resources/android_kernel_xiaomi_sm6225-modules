@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * Copyright (c) 2016-2021, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
@@ -1882,6 +1882,51 @@ static int msm_pm_resume(struct device *dev)
 
 	return 0;
 }
+
+static int msm_pm_freeze(struct device *dev)
+{
+	struct drm_device *ddev;
+	struct sde_kms *sde_kms;
+
+	if (!dev)
+		return -EINVAL;
+
+	ddev = dev_get_drvdata(dev);
+	if (!ddev || !ddev->dev_private)
+		return -EINVAL;
+
+	sde_kms = to_sde_kms(ddev_to_msm_kms(ddev));
+	sde_kms->hibernate_phase = true;
+
+	msm_pm_suspend(dev);
+
+	return 0;
+}
+
+static int msm_pm_restore(struct device *dev)
+{
+	struct drm_device *ddev;
+	struct sde_kms *sde_kms;
+
+	if (!dev)
+		return -EINVAL;
+
+	msm_pm_resume(dev);
+
+	ddev = dev_get_drvdata(dev);
+	if (!ddev || !ddev->dev_private)
+		return -EINVAL;
+
+	sde_kms = to_sde_kms(ddev_to_msm_kms(ddev));
+	sde_kms->hibernate_phase = false;
+
+	return 0;
+}
+
+static int msm_pm_thaw(struct device *dev)
+{
+	return 0;
+}
 #endif /* CONFIG_PM_SLEEP */
 
 #if IS_ENABLED(CONFIG_PM)
@@ -1918,7 +1963,13 @@ static int msm_runtime_resume(struct device *dev)
 #endif /* CONFIG_PM */
 
 static const struct dev_pm_ops msm_pm_ops = {
-	SET_SYSTEM_SLEEP_PM_OPS(msm_pm_suspend, msm_pm_resume)
+#if IS_ENABLED(CONFIG_PM_SLEEP)
+	.suspend = msm_pm_suspend,
+	.resume = msm_pm_resume,
+	.freeze = msm_pm_freeze,
+	.thaw = msm_pm_thaw,
+	.restore = msm_pm_restore,
+#endif /* CONFIG_PM_SLEEP */
 	SET_RUNTIME_PM_OPS(msm_runtime_suspend, msm_runtime_resume, NULL)
 };
 
