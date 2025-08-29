@@ -272,3 +272,9 @@ msm_drm-$(CONFIG_DRM_MSM) += msm_atomic.o \
 			     msm_smmu.o \
 			     msm_prop.o
 
+ifeq ($(CONFIG_DRM_MSM_DSI), y)
+	ktz8866_leds-y := \
+		 ./dsi/ktz8866_leds_i2c.o
+
+	obj-m += ktz8866_leds.o
+endif

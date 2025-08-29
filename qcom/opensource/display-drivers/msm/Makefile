@@ -1,10 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 
 KBUILD_EXTRA_SYMBOLS := \
-    $(OUT_DIR)/../sm6225-modules/qcom/opensource/mm-drivers/hw_fence/Module.symvers \
-    $(OUT_DIR)/../sm6225-modules/qcom/opensource/mm-drivers/msm_ext_display/Module.symvers \
-    $(OUT_DIR)/../sm6225-modules/qcom/opensource/mm-drivers/sync_fence/Module.symvers \
-    $(OUT_DIR)/../sm6225-modules/qcom/opensource/mmrm-driver/Module.symvers \
     $(OUT_DIR)/../sm6225-modules/qcom/opensource/securemsm-kernel/Module.symvers
 
 KBUILD_OPTIONS += DISPLAY_ROOT=$(KERNEL_SRC)/$(M)/../
